@@ -1,0 +1,21 @@
+# .NET build output
+**/bin/
+**/obj/
+artifacts/
+dist/
+
+# IDE and local state
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Runtime state
+data/
+logs/
+*.partial
+
+# Generated release artifacts
+*.zip
+*-Setup.exe
+
