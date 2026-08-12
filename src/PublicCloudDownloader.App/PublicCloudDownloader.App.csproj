@@ -6,9 +6,13 @@
     <AssemblyName>PublicCloudDownloader</AssemblyName>
     <RootNamespace>PublicCloudDownloader.App</RootNamespace>
     <Product>Public Cloud Downloader</Product>
+    <ApplicationIcon>Assets\PublicCloudDownloader.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\PublicCloudDownloader.Core\PublicCloudDownloader.Core.csproj" />
     <ProjectReference Include="..\PublicCloudDownloader.Infrastructure\PublicCloudDownloader.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\PublicCloudDownloader.ico" />
   </ItemGroup>
 </Project>
