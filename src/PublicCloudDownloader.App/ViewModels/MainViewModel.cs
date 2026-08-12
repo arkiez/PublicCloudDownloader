@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Reflection;
 using PublicCloudDownloader.Core.Downloads;
 using PublicCloudDownloader.Core.Links;
 using PublicCloudDownloader.Core.Models;
@@ -22,6 +23,7 @@ public sealed class MainViewModel(IDownloadWorkflow workflow) : INotifyPropertyC
     public string DestinationStatus { get => _destinationStatus; private set => Set(ref _destinationStatus, value); }
     public bool IsBusy { get => _isBusy; set { if (Set(ref _isBusy, value)) OnPropertyChanged(nameof(CanDownload)); } }
     public bool CanDownload => !IsBusy && CloudLinkParser.TryParse(SourceLink, out _, out _) && IsWritableDestination(DestinationPath);
+    public string VersionText => "Version " + (typeof(MainViewModel).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown").Split('+')[0];
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public Task<PreparedDownload> PrepareAsync(IProgress<ManifestProgress>? progress, CancellationToken cancellationToken) => workflow.PrepareAsync(SourceLink, DestinationPath, progress, cancellationToken);

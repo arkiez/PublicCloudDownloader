@@ -7,6 +7,7 @@ dist/
 # IDE and local state
 .vs/
 .vscode/
+.dotnet-home/
 *.user
 *.suo
 
