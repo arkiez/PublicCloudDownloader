@@ -141,7 +141,7 @@ public sealed class GoogleDriveProvider : IPublicCloudProvider, IAsyncDisposable
 
     private static void ValidateGoogleUri(Uri uri)
     {
-        if (uri.Scheme != Uri.UriSchemeHttps || !(uri.IdnHost.Equals("drive.google.com", StringComparison.OrdinalIgnoreCase) || uri.IdnHost.Equals("docs.google.com", StringComparison.OrdinalIgnoreCase) || uri.IdnHost.EndsWith(".googleusercontent.com", StringComparison.OrdinalIgnoreCase)))
+        if (uri.Scheme != Uri.UriSchemeHttps || !(uri.IdnHost.Equals("drive.google.com", StringComparison.OrdinalIgnoreCase) || uri.IdnHost.Equals("docs.google.com", StringComparison.OrdinalIgnoreCase) || uri.IdnHost.Equals("drive.usercontent.google.com", StringComparison.OrdinalIgnoreCase) || uri.IdnHost.EndsWith(".googleusercontent.com", StringComparison.OrdinalIgnoreCase)))
             throw new ProviderResponseChangedException("Google Drive attempted to use an unexpected download host.");
     }
 

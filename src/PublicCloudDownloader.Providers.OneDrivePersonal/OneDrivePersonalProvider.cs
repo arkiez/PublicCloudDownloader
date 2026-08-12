@@ -195,6 +195,8 @@ public sealed class OneDrivePersonalProvider : IPublicCloudProvider, IAsyncDispo
     }
     private static void ValidateShareUri(Uri uri)
     {
+        if (uri.IdnHost.EndsWith(".sharepoint.com", StringComparison.OrdinalIgnoreCase))
+            throw new UnsupportedCloudItemException("OneDrive Business and SharePoint links are not supported.");
         if (uri.Scheme != Uri.UriSchemeHttps || !(uri.IdnHost.Equals("1drv.ms", StringComparison.OrdinalIgnoreCase) || uri.IdnHost.Equals("onedrive.live.com", StringComparison.OrdinalIgnoreCase)))
             throw new ProviderResponseChangedException("The OneDrive share redirected to an unsupported host.");
     }

@@ -41,6 +41,7 @@ public sealed class WindowsPathPlannerTests
 
     [Theory]
     [InlineData("CON", "CON_")]
+    [InlineData("CON.tar.gz", "CON_.tar.gz")]
     [InlineData("bad. ", "bad")]
     [InlineData("", "_")]
     public void Unsafe_windows_names_are_sanitized(string input, string expected)

@@ -47,17 +47,30 @@ public sealed class OneDrivePersonalProviderTests
         await Assert.ThrowsAsync<ProviderResponseChangedException>(() => provider.OpenDownloadAsync(item, default));
     }
 
+    [Fact]
+    public async Task Short_link_redirect_to_sharepoint_is_reported_as_unsupported_business_link()
+    {
+        using var handler = new OneDriveHandler { RedirectShortToSharePoint = true };
+        await using var provider = new OneDrivePersonalProvider(handler);
+        CloudLinkParser.TryParse("https://1drv.ms/f/c/bdbb59c1db4a58dd/ExampleToken", out var link, out _);
+        await Assert.ThrowsAsync<UnsupportedCloudItemException>(() => provider.BuildManifestAsync(link!, null, default));
+    }
+
     private sealed class OneDriveHandler : HttpMessageHandler
     {
         public List<string> Requests { get; } = [];
         public List<string?> BadgerRequests { get; } = [];
         public bool RedirectContentToEvilHost { get; init; }
+        public bool RedirectShortToSharePoint { get; init; }
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var uri = request.RequestUri!.ToString(); Requests.Add(uri);
             if (request.Headers.Authorization is not null) BadgerRequests.Add(request.Headers.Authorization.ToString());
             if (uri.StartsWith("https://1drv.ms/", StringComparison.Ordinal))
-                return Json("{\"redirectUrl\":\"https://onedrive.live.com/?redeem=redeem-token\"}", request, new("https://onedrive.live.com/?redeem=redeem-token"));
+            {
+                var target = RedirectShortToSharePoint ? new Uri("https://tenant.sharepoint.com/:f:/s/Test/Example") : new Uri("https://onedrive.live.com/?redeem=redeem-token");
+                return Json("{}", request, target);
+            }
             if (uri.Contains("api-badgerp", StringComparison.Ordinal)) return Json("{\"token\":\"test-token\"}", request);
             if (uri.Contains("/shares/u!redeem-token/driveitem", StringComparison.Ordinal))
                 return Json("{\"id\":\"root\",\"name\":\"Shared Photos\",\"folder\":{\"childCount\":2},\"parentReference\":{\"driveId\":\"drive\"}}", request);

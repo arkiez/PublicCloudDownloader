@@ -67,7 +67,7 @@ public sealed class GoogleDriveProviderTests
                 return Html("<html><head><title>docs</title></head><body><a href='https://drive.google.com/file/d/1GuideIdentifier123456789/view'>guide.pdf</a></body></html>");
             if (uri.Contains("confirm=yes", StringComparison.Ordinal)) return Bytes("payload", "application/octet-stream");
             if (uri.Contains("/uc?", StringComparison.Ordinal))
-                return Html("<html><form id='download-form' action='https://drive.google.com/download'><input name='confirm' value='yes'><input name='id' value='1BinaryFileIdentifier123456'></form></html>");
+                return Html("<html><form id='download-form' action='https://drive.usercontent.google.com/download'><input name='confirm' value='yes'><input name='id' value='1BinaryFileIdentifier123456'></form></html>");
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
         }
         private static Task<HttpResponseMessage> Html(string html) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(html, Encoding.UTF8, "text/html") });

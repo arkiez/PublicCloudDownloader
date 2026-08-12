@@ -48,8 +48,9 @@ public static class WindowsPathPlanner
         var chars = value.Select(c => c < 32 || "<>:\"/\\|?*".Contains(c) ? '_' : c).ToArray();
         var result = new string(chars).TrimEnd(' ', '.');
         if (string.IsNullOrWhiteSpace(result)) result = "_";
-        var stem = Path.GetFileNameWithoutExtension(result);
-        if (Reserved.Contains(stem)) result = stem + "_" + Path.GetExtension(result);
+        var firstExtension = result.IndexOf('.');
+        var deviceStem = firstExtension < 0 ? result : result[..firstExtension];
+        if (Reserved.Contains(deviceStem)) result = deviceStem + "_" + result[deviceStem.Length..];
         return result;
     }
 
