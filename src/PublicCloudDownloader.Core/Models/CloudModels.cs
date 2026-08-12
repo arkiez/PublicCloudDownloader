@@ -40,9 +40,10 @@ public sealed record FileCollision(PlannedItem Item, long ExistingLength);
 public sealed record ManifestProgress(int ItemsDiscovered, string? CurrentPath);
 
 public sealed record DownloadProgress(
-    int CompletedItems,
-    int TotalItems,
-    long CompletedBytes,
-    long? TotalBytes,
-    string? CurrentPath,
+    int CompletedFiles,
+    int TotalFiles,
+    long TransferredBytes,
+    long? KnownTotalBytes,
+    string? CurrentRelativePath,
+    int FailedFiles,
     string Status);
