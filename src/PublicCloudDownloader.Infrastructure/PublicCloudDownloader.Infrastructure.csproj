@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PublicCloudDownloader.Core\PublicCloudDownloader.Core.csproj" />
+    <ProjectReference Include="..\PublicCloudDownloader.Providers.GoogleDrive\PublicCloudDownloader.Providers.GoogleDrive.csproj" />
+    <ProjectReference Include="..\PublicCloudDownloader.Providers.OneDrivePersonal\PublicCloudDownloader.Providers.OneDrivePersonal.csproj" />
+  </ItemGroup>
+</Project>

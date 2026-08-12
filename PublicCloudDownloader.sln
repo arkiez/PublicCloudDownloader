@@ -1,0 +1,64 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{2FBD1724-D8D7-4FB3-8C38-CA116D79C6A8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublicCloudDownloader.Core", "src\PublicCloudDownloader.Core\PublicCloudDownloader.Core.csproj", "{0142656D-EC41-4DCA-BEAD-F66B5BFFD266}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublicCloudDownloader.Providers.GoogleDrive", "src\PublicCloudDownloader.Providers.GoogleDrive\PublicCloudDownloader.Providers.GoogleDrive.csproj", "{E539272C-929B-49AB-A99A-2F8111BEBECB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublicCloudDownloader.Providers.OneDrivePersonal", "src\PublicCloudDownloader.Providers.OneDrivePersonal\PublicCloudDownloader.Providers.OneDrivePersonal.csproj", "{6ADE8499-33BF-495A-B46D-9D292F5F6A89}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublicCloudDownloader.Infrastructure", "src\PublicCloudDownloader.Infrastructure\PublicCloudDownloader.Infrastructure.csproj", "{D0A74501-8097-488A-9622-9170846EB90B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublicCloudDownloader.App", "src\PublicCloudDownloader.App\PublicCloudDownloader.App.csproj", "{7668B2B4-E58A-4A45-A80B-9EA8C13503D6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{74EDCDC8-6435-4136-ABF2-FD1D1EC443FE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublicCloudDownloader.Tests", "tests\PublicCloudDownloader.Tests\PublicCloudDownloader.Tests.csproj", "{E3095947-0247-4106-B426-AEB001FA6EF5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0142656D-EC41-4DCA-BEAD-F66B5BFFD266}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0142656D-EC41-4DCA-BEAD-F66B5BFFD266}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0142656D-EC41-4DCA-BEAD-F66B5BFFD266}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0142656D-EC41-4DCA-BEAD-F66B5BFFD266}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E539272C-929B-49AB-A99A-2F8111BEBECB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E539272C-929B-49AB-A99A-2F8111BEBECB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E539272C-929B-49AB-A99A-2F8111BEBECB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E539272C-929B-49AB-A99A-2F8111BEBECB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6ADE8499-33BF-495A-B46D-9D292F5F6A89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6ADE8499-33BF-495A-B46D-9D292F5F6A89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6ADE8499-33BF-495A-B46D-9D292F5F6A89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6ADE8499-33BF-495A-B46D-9D292F5F6A89}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0A74501-8097-488A-9622-9170846EB90B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0A74501-8097-488A-9622-9170846EB90B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0A74501-8097-488A-9622-9170846EB90B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0A74501-8097-488A-9622-9170846EB90B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7668B2B4-E58A-4A45-A80B-9EA8C13503D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7668B2B4-E58A-4A45-A80B-9EA8C13503D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7668B2B4-E58A-4A45-A80B-9EA8C13503D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7668B2B4-E58A-4A45-A80B-9EA8C13503D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3095947-0247-4106-B426-AEB001FA6EF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3095947-0247-4106-B426-AEB001FA6EF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3095947-0247-4106-B426-AEB001FA6EF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3095947-0247-4106-B426-AEB001FA6EF5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{0142656D-EC41-4DCA-BEAD-F66B5BFFD266} = {2FBD1724-D8D7-4FB3-8C38-CA116D79C6A8}
+		{E539272C-929B-49AB-A99A-2F8111BEBECB} = {2FBD1724-D8D7-4FB3-8C38-CA116D79C6A8}
+		{6ADE8499-33BF-495A-B46D-9D292F5F6A89} = {2FBD1724-D8D7-4FB3-8C38-CA116D79C6A8}
+		{D0A74501-8097-488A-9622-9170846EB90B} = {2FBD1724-D8D7-4FB3-8C38-CA116D79C6A8}
+		{7668B2B4-E58A-4A45-A80B-9EA8C13503D6} = {2FBD1724-D8D7-4FB3-8C38-CA116D79C6A8}
+		{E3095947-0247-4106-B426-AEB001FA6EF5} = {74EDCDC8-6435-4136-ABF2-FD1D1EC443FE}
+	EndGlobalSection
+EndGlobal
