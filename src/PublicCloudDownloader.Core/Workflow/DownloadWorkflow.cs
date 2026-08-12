@@ -32,7 +32,8 @@ public sealed class DownloadWorkflow(IProviderFactory providerFactory, IFileWrit
 
     public async Task<DownloadResult> ExecuteAsync(PreparedDownload prepared, ExistingFilePolicy policy, IProgress<DownloadProgress>? progress, CancellationToken cancellationToken)
     {
-        var result = await new DownloadCoordinator(fileWriter, delay).RunAsync(prepared.Provider, prepared.Plan, policy, prepared.JobId, progress, cancellationToken);
+        var confirmedOverwrites = prepared.Conflicts.Select(x => x.Item.FinalPath).ToArray();
+        var result = await new DownloadCoordinator(fileWriter, delay).RunAsync(prepared.Provider, prepared.Plan, policy, prepared.JobId, confirmedOverwrites, progress, cancellationToken);
         if (logger is not null) await logger.WriteAsync(prepared.JobId, prepared.ParsedLink, prepared.Plan, result, CancellationToken.None);
         return result;
     }

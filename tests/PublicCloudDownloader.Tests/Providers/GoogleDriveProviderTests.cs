@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using PublicCloudDownloader.Core.Links;
 using PublicCloudDownloader.Core.Models;
+using PublicCloudDownloader.Core.Providers;
 using PublicCloudDownloader.Providers.GoogleDrive;
 
 namespace PublicCloudDownloader.Tests.Providers;
@@ -33,6 +34,27 @@ public sealed class GoogleDriveProviderTests
         Assert.Contains(handler.Requests, x => x.Contains("confirm=yes", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task Provider_rejects_a_redirect_to_an_untrusted_host()
+    {
+        using var handler = new EvilRedirectHandler();
+        await using var provider = new GoogleDriveProvider(handler);
+        CloudLinkParser.TryParse("https://drive.google.com/drive/folders/1RootFolderIdentifier1234567", out var link, out _);
+        await Assert.ThrowsAsync<ProviderResponseChangedException>(() => provider.BuildManifestAsync(link!, null, default));
+    }
+
+    [Fact]
+    public async Task Public_folder_shortcut_cycle_is_ignored_safely()
+    {
+        using var handler = new CycleHandler();
+        await using var provider = new GoogleDriveProvider(handler);
+        CloudLinkParser.TryParse("https://drive.google.com/drive/folders/1RootFolderIdentifier1234567", out var link, out _);
+        var manifest = await provider.BuildManifestAsync(link!, null, default);
+        Assert.Single(manifest.Items);
+        Assert.Equal("docs", manifest.Items[0].RelativePath);
+        Assert.Equal(2, handler.RequestCount);
+    }
+
     private sealed class GoogleHandler : HttpMessageHandler
     {
         public List<string> Requests { get; } = [];
@@ -50,5 +72,27 @@ public sealed class GoogleDriveProviderTests
         }
         private static Task<HttpResponseMessage> Html(string html) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(html, Encoding.UTF8, "text/html") });
         private static Task<HttpResponseMessage> Bytes(string text, string type) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(text, Encoding.UTF8, type) });
+    }
+
+    private sealed class EvilRedirectHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            request.RequestUri = new Uri("https://evil.example/folder");
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = request, Content = new StringContent("<html><title>Wrong host</title></html>") });
+        }
+    }
+    private sealed class CycleHandler : HttpMessageHandler
+    {
+        public int RequestCount { get; private set; }
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            RequestCount++;
+            var isRoot = request.RequestUri!.Query.Contains("1RootFolder", StringComparison.Ordinal);
+            var html = isRoot
+                ? "<html><title>Root</title><a href='https://drive.google.com/drive/folders/1NestedFolderIdentifier12345'>docs</a></html>"
+                : "<html><title>docs</title><a href='https://drive.google.com/drive/folders/1RootFolderIdentifier1234567'>root shortcut</a></html>";
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = request, Content = new StringContent(html) });
+        }
     }
 }

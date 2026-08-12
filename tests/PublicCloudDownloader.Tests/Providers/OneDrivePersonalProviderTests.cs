@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using PublicCloudDownloader.Core.Links;
 using PublicCloudDownloader.Core.Models;
+using PublicCloudDownloader.Core.Providers;
 using PublicCloudDownloader.Providers.OneDrivePersonal;
 
 namespace PublicCloudDownloader.Tests.Providers;
@@ -35,10 +36,22 @@ public sealed class OneDrivePersonalProviderTests
         Assert.Contains(handler.Requests, x => x.Contains("/items/file1", StringComparison.Ordinal) && !x.Contains("children", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task Download_rejects_a_final_redirect_to_an_untrusted_host()
+    {
+        using var handler = new OneDriveHandler { RedirectContentToEvilHost = true };
+        await using var provider = new OneDrivePersonalProvider(handler);
+        CloudLinkParser.TryParse("https://1drv.ms/f/c/bdbb59c1db4a58dd/ExampleToken", out var link, out _);
+        var manifest = await provider.BuildManifestAsync(link!, null, default);
+        var item = manifest.Items.Single(x => x.RelativePath == "photo.jpg");
+        await Assert.ThrowsAsync<ProviderResponseChangedException>(() => provider.OpenDownloadAsync(item, default));
+    }
+
     private sealed class OneDriveHandler : HttpMessageHandler
     {
         public List<string> Requests { get; } = [];
         public List<string?> BadgerRequests { get; } = [];
+        public bool RedirectContentToEvilHost { get; init; }
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var uri = request.RequestUri!.ToString(); Requests.Add(uri);
@@ -55,7 +68,10 @@ public sealed class OneDrivePersonalProviderTests
             if (uri.Contains("/items/file1", StringComparison.Ordinal))
                 return Json("{\"id\":\"file1\",\"@content.downloadUrl\":\"https://public.dm.files.1drv.com/content\"}", request);
             if (uri.StartsWith("https://public.dm.files.1drv.com", StringComparison.Ordinal))
+            {
+                if (RedirectContentToEvilHost) request.RequestUri = new Uri("https://evil.example/content");
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("new-content", Encoding.UTF8, "application/octet-stream"), RequestMessage = request });
+            }
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound) { RequestMessage = request });
         }
         private static Task<HttpResponseMessage> Json(string value, HttpRequestMessage request, Uri? finalUri = null)

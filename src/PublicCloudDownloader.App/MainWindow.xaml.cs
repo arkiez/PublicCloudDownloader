@@ -35,10 +35,10 @@ public partial class MainWindow : Window
         {
             var discovery = new Progress<ManifestProgress>(p => _viewModel.LinkStatus = $"Checking public access… {p.ItemsDiscovered} items found");
             await using var prepared = await _viewModel.PrepareAsync(discovery, cancellation.Token);
-            var policy = ExistingFilePolicy.Overwrite;
+            var policy = ExistingFilePolicy.Skip;
             if (prepared.Conflicts.Count > 0)
             {
-                var conflict = new ConflictDialog(prepared.Conflicts.Count) { Owner = this };
+                var conflict = new ConflictDialog(prepared.Conflicts) { Owner = this };
                 if (conflict.ShowDialog() != true || conflict.Policy == ExistingFilePolicy.Cancel) { _viewModel.LinkStatus = "Download cancelled."; return; }
                 policy = conflict.Policy;
             }

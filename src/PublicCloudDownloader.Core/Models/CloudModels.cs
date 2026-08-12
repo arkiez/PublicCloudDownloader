@@ -23,7 +23,8 @@ public sealed record ManifestItem(
     long? Size,
     DownloadVariant? Variant,
     string? DownloadUrl = null,
-    string? ResourceKey = null);
+    string? ResourceKey = null,
+    string? ParentId = null);
 
 public sealed record PublicManifest(
     ProviderKind Provider,

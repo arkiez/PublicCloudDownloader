@@ -14,7 +14,7 @@ public sealed class GoogleDriveProvider : IPublicCloudProvider, IAsyncDisposable
     public GoogleDriveProvider(HttpMessageHandler? handler = null, GoogleDriveOptions? options = null)
     {
         _options = options ?? new();
-        handler ??= new HttpClientHandler { CookieContainer = new CookieContainer(), AllowAutoRedirect = true, AutomaticDecompression = DecompressionMethods.All };
+        handler ??= new HttpClientHandler { CookieContainer = new CookieContainer(), AllowAutoRedirect = false, AutomaticDecompression = DecompressionMethods.All };
         _client = new HttpClient(handler, true);
         _client.DefaultRequestHeaders.UserAgent.ParseAdd(_options.UserAgent);
         _client.Timeout = TimeSpan.FromMinutes(10);
@@ -82,10 +82,11 @@ public sealed class GoogleDriveProvider : IPublicCloudProvider, IAsyncDisposable
             var relative = string.IsNullOrEmpty(prefix) ? entry.Name : Path.Combine(prefix, entry.Name);
             if (entry.Kind == ManifestItemKind.Directory)
             {
-                output.Add(new(entry.Id, relative, ManifestItemKind.Directory, null, null, null, resourceKey));
+                if (visited.Contains(entry.Id)) continue;
+                output.Add(new(entry.Id, relative, ManifestItemKind.Directory, null, null, null, resourceKey, id));
                 await EnumerateFolderAsync(entry.Id, relative, resourceKey, output, visited, progress, cancellationToken);
             }
-            else output.Add(new(entry.Id, relative, ManifestItemKind.File, null, entry.Variant, null, resourceKey));
+            else output.Add(new(entry.Id, relative, ManifestItemKind.File, null, entry.Variant, null, resourceKey, id));
             progress?.Report(new(output.Count, relative));
         }
         return title;
@@ -111,11 +112,31 @@ public sealed class GoogleDriveProvider : IPublicCloudProvider, IAsyncDisposable
     private async Task<HttpResponseMessage> SendAsync(Uri uri, CancellationToken cancellationToken)
     {
         ValidateGoogleUri(uri);
-        var response = await _client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        var response = await SendFollowingRedirectsAsync(uri, cancellationToken);
         if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden or HttpStatusCode.NotFound) { response.Dispose(); throw new PrivateLinkException("This Google Drive item is not public or is no longer available."); }
         if ((int)response.StatusCode == 429) { response.Dispose(); throw new ProviderThrottledException("Google Drive is temporarily limiting requests."); }
         response.EnsureSuccessStatusCode();
         return response;
+    }
+
+    private async Task<HttpResponseMessage> SendFollowingRedirectsAsync(Uri initialUri, CancellationToken cancellationToken)
+    {
+        var current = initialUri;
+        for (var redirect = 0; redirect <= 10; redirect++)
+        {
+            ValidateGoogleUri(current);
+            var response = await _client.GetAsync(current, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            var finalUri = response.RequestMessage?.RequestUri ?? current;
+            try { ValidateGoogleUri(finalUri); }
+            catch { response.Dispose(); throw; }
+            if ((int)response.StatusCode is >= 300 and < 400 && response.Headers.Location is not null)
+            {
+                var next = response.Headers.Location.IsAbsoluteUri ? response.Headers.Location : new Uri(finalUri, response.Headers.Location);
+                response.Dispose(); current = next; continue;
+            }
+            return response;
+        }
+        throw new ProviderResponseChangedException("Google Drive returned too many redirects.");
     }
 
     private static void ValidateGoogleUri(Uri uri)

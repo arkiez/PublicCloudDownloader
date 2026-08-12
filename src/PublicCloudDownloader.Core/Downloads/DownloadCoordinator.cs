@@ -6,7 +6,7 @@ namespace PublicCloudDownloader.Core.Downloads;
 
 public sealed class DownloadCoordinator(IFileWriter fileWriter, IDelay delay, int maxConcurrency = 3)
 {
-    public async Task<DownloadResult> RunAsync(IPublicCloudProvider provider, DownloadPlan plan, ExistingFilePolicy policy, Guid jobId, IProgress<DownloadProgress>? progress, CancellationToken cancellationToken)
+    public async Task<DownloadResult> RunAsync(IPublicCloudProvider provider, DownloadPlan plan, ExistingFilePolicy policy, Guid jobId, IReadOnlyCollection<string> confirmedOverwritePaths, IProgress<DownloadProgress>? progress, CancellationToken cancellationToken)
     {
         if (policy == ExistingFilePolicy.Cancel) return new(DownloadCompletion.Cancelled, 0, 0, []);
         if (File.Exists(plan.OutputRoot)) return new(DownloadCompletion.Failed, 0, 0, [new(plan.OutputRoot, "path-conflict", "A file already occupies the planned output folder path.")]);
@@ -14,6 +14,7 @@ public sealed class DownloadCoordinator(IFileWriter fileWriter, IDelay delay, in
         foreach (var directory in plan.Items.Where(x => x.Source.Kind == ManifestItemKind.Directory)) Directory.CreateDirectory(directory.FinalPath);
 
         var files = plan.Items.Where(x => x.Source.Kind == ManifestItemKind.File).ToArray();
+        var confirmed = new HashSet<string>(confirmedOverwritePaths, StringComparer.OrdinalIgnoreCase);
         var failures = new ConcurrentBag<DownloadFailure>();
         var downloaded = 0; var skipped = 0; var transferred = 0L; var completed = 0; var failed = 0;
         long? total = files.All(x => x.Source.Size.HasValue) ? files.Sum(x => x.Source.Size!.Value) : null;
@@ -21,7 +22,9 @@ public sealed class DownloadCoordinator(IFileWriter fileWriter, IDelay delay, in
         {
             await Parallel.ForEachAsync(files, new ParallelOptions { MaxDegreeOfParallelism = maxConcurrency, CancellationToken = cancellationToken }, async (item, token) =>
             {
-                if (File.Exists(item.FinalPath) && policy == ExistingFilePolicy.Skip)
+                var exists = File.Exists(item.FinalPath);
+                var mayOverwrite = policy == ExistingFilePolicy.Overwrite && confirmed.Contains(item.FinalPath);
+                if (exists && !mayOverwrite)
                 {
                     Interlocked.Increment(ref skipped); var done = Interlocked.Increment(ref completed);
                     progress?.Report(new(done, files.Length, Interlocked.Read(ref transferred), total, item.RelativeOutputPath, Volatile.Read(ref failed), "Skipped existing file"));
@@ -35,7 +38,7 @@ public sealed class DownloadCoordinator(IFileWriter fileWriter, IDelay delay, in
                     {
                         await using var lease = await provider.OpenDownloadAsync(item.Source, token);
                         var byteProgress = new Progress<long>(value => { Interlocked.Add(ref transferred, value); progress?.Report(new(Volatile.Read(ref completed), files.Length, Interlocked.Read(ref transferred), total, item.RelativeOutputPath, Volatile.Read(ref failed), "Downloading")); });
-                        await fileWriter.WriteAsync(lease.Content, item.FinalPath, policy == ExistingFilePolicy.Overwrite, jobId, byteProgress, token);
+                        await fileWriter.WriteAsync(lease.Content, item.FinalPath, mayOverwrite, jobId, byteProgress, token);
                         Interlocked.Increment(ref downloaded); var done = Interlocked.Increment(ref completed);
                         progress?.Report(new(done, files.Length, Interlocked.Read(ref transferred), total, item.RelativeOutputPath, Volatile.Read(ref failed), "Downloaded"));
                         return;

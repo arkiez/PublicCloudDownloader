@@ -16,21 +16,29 @@ public static class WindowsPathPlanner
     {
         if (string.IsNullOrWhiteSpace(destination) || !Path.IsPathFullyQualified(destination))
             throw new ArgumentException("Destination must be an absolute path.", nameof(destination));
-        var destinationFull = Path.GetFullPath(destination).TrimEnd(Path.DirectorySeparatorChar);
+        var destinationFull = Path.TrimEndingDirectorySeparator(Path.GetFullPath(destination));
         var outputRoot = manifest.SourceKind == SourceHint.Folder
             ? Path.Combine(destinationFull, SanitizeSegment(manifest.RootName))
             : destinationFull;
         var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var planned = new List<PlannedItem>(manifest.Items.Count);
-        foreach (var item in manifest.Items)
+        var resolvedDirectories = new Dictionary<string, string>(StringComparer.Ordinal);
+        var ordered = manifest.Items.Select((item, index) => (item, index))
+            .OrderBy(x => PathDepth(x.item.RelativePath)).ThenBy(x => x.item.Kind == ManifestItemKind.Directory ? 0 : 1).ThenBy(x => x.index);
+        foreach (var entry in ordered)
         {
-            var relative = SanitizeRelativePath(item.RelativePath);
+            var item = entry.item;
+            string relative;
+            if (!string.IsNullOrEmpty(item.ParentId) && resolvedDirectories.TryGetValue(item.ParentId, out var resolvedParent))
+                relative = Path.Combine(resolvedParent, SanitizeSegment(Path.GetFileName(item.RelativePath.Replace('/', Path.DirectorySeparatorChar))));
+            else relative = SanitizeRelativePath(item.RelativePath);
             relative = MakeUnique(relative, used);
             var finalPath = Path.GetFullPath(Path.Combine(outputRoot, relative));
             var rootWithSeparator = Path.GetFullPath(outputRoot).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
             if (!finalPath.StartsWith(rootWithSeparator, StringComparison.OrdinalIgnoreCase))
                 throw new ManifestPathException("path-escape", "A cloud item attempted to escape the selected destination.");
             planned.Add(new(item, finalPath, relative));
+            if (item.Kind == ManifestItemKind.Directory) resolvedDirectories[item.Id] = relative;
         }
         return new(destinationFull, outputRoot, planned);
     }
@@ -68,4 +76,5 @@ public static class WindowsPathPlanner
     }
 
     private static void ThrowEscape() => throw new ManifestPathException("path-escape", "A cloud item contained an unsafe path.");
+    private static int PathDepth(string path) => path.Count(c => c is '/' or '\\');
 }

@@ -49,6 +49,26 @@ public sealed class WindowsPathPlannerTests
         Assert.Equal(expected, Path.GetFileName(Assert.Single(plan.Items).FinalPath));
     }
 
+    [Fact]
+    public void Drive_root_destination_is_preserved_as_a_rooted_path()
+    {
+        var driveRoot = Path.GetPathRoot(Environment.SystemDirectory)!;
+        var plan = WindowsPathPlanner.CreatePlan(Manifest(SourceHint.File, "report.pdf", File("report.pdf")), driveRoot);
+        Assert.Equal(Path.Combine(driveRoot, "report.pdf"), Assert.Single(plan.Items).FinalPath);
+    }
+
+    [Fact]
+    public void Renamed_directory_collision_keeps_each_child_with_its_parent()
+    {
+        var firstFolder = new ManifestItem("folder-1", "A?", ManifestItemKind.Directory, null, null);
+        var secondFolder = new ManifestItem("folder-2", "A*", ManifestItemKind.Directory, null, null);
+        var firstChild = new ManifestItem("file-1", "A?/first.txt", ManifestItemKind.File, 1, DownloadVariant.Binary, ParentId: "folder-1");
+        var secondChild = new ManifestItem("file-2", "A*/second.txt", ManifestItemKind.File, 1, DownloadVariant.Binary, ParentId: "folder-2");
+        var plan = WindowsPathPlanner.CreatePlan(Manifest(SourceHint.Folder, "Root", firstFolder, secondFolder, firstChild, secondChild), @"C:\Downloads");
+        Assert.Contains(plan.Items, x => x.RelativeOutputPath == Path.Combine("A_", "first.txt"));
+        Assert.Contains(plan.Items, x => x.RelativeOutputPath == Path.Combine("A_ (2)", "second.txt"));
+    }
+
     private static PublicManifest Manifest(SourceHint hint, string root, params ManifestItem[] items) => new(ProviderKind.GoogleDrive, hint, root, items);
     private static ManifestItem File(string path) => new(Guid.NewGuid().ToString("N"), path, ManifestItemKind.File, null, null);
     private static ManifestItem Directory(string path) => new(Guid.NewGuid().ToString("N"), path, ManifestItemKind.Directory, null, null);

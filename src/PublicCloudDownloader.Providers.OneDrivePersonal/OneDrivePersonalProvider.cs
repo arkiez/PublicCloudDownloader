@@ -20,7 +20,7 @@ public sealed class OneDrivePersonalProvider : IPublicCloudProvider, IAsyncDispo
     public OneDrivePersonalProvider(HttpMessageHandler? handler = null, OneDrivePersonalOptions? options = null)
     {
         _options = options ?? new();
-        handler ??= new HttpClientHandler { AllowAutoRedirect = true, AutomaticDecompression = DecompressionMethods.All };
+        handler ??= new HttpClientHandler { AllowAutoRedirect = false, AutomaticDecompression = DecompressionMethods.All };
         _client = new HttpClient(handler, true);
         _client.DefaultRequestHeaders.UserAgent.ParseAdd(_options.UserAgent);
         _client.Timeout = TimeSpan.FromMinutes(10);
@@ -54,7 +54,7 @@ public sealed class OneDrivePersonalProvider : IPublicCloudProvider, IAsyncDispo
         if (!json.RootElement.TryGetProperty("@content.downloadUrl", out var urlProperty) || !Uri.TryCreate(urlProperty.GetString(), UriKind.Absolute, out var contentUri))
             throw new DownloadDisabledException("Downloading this OneDrive item is disabled by its owner.");
         ValidateContentUri(contentUri);
-        var response = await _client.GetAsync(contentUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        var response = await SendGetFollowingRedirectsAsync(contentUri, ValidateContentUri, null, cancellationToken);
         MapStatus(response);
         var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         return new(stream, response.Content.Headers.ContentLength ?? item.Size, response.Content.Headers.ContentType?.MediaType, new ResponseOwner(response));
@@ -78,10 +78,10 @@ public sealed class OneDrivePersonalProvider : IPublicCloudProvider, IAsyncDispo
                 _driveByItem[child.Id] = childDrive;
                 if (child.IsFolder)
                 {
-                    output.Add(new(child.Id, relative, ManifestItemKind.Directory, null, null));
+                    output.Add(new(child.Id, relative, ManifestItemKind.Directory, null, null, ParentId: itemId));
                     await EnumerateAsync(childDrive, child.Id, relative, output, visited, progress, cancellationToken);
                 }
-                else output.Add(new(child.Id, relative, ManifestItemKind.File, child.Size, DownloadVariant.Binary));
+                else output.Add(new(child.Id, relative, ManifestItemKind.File, child.Size, DownloadVariant.Binary, ParentId: itemId));
                 progress?.Report(new(output.Count, relative));
             }
             page = null;
@@ -97,7 +97,7 @@ public sealed class OneDrivePersonalProvider : IPublicCloudProvider, IAsyncDispo
         var finalUri = link.OriginalUri;
         if (finalUri.IdnHost.Equals("1drv.ms", StringComparison.OrdinalIgnoreCase))
         {
-            using var response = await _client.GetAsync(finalUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using var response = await SendGetFollowingRedirectsAsync(finalUri, ValidateShareUri, null, cancellationToken);
             MapStatus(response);
             finalUri = response.RequestMessage?.RequestUri ?? finalUri;
             if (finalUri.IdnHost.EndsWith(".sharepoint.com", StringComparison.OrdinalIgnoreCase)) throw new UnsupportedCloudItemException("OneDrive Business and SharePoint links are not supported.");
@@ -124,6 +124,7 @@ public sealed class OneDrivePersonalProvider : IPublicCloudProvider, IAsyncDispo
         using var request = new HttpRequestMessage(HttpMethod.Post, _options.BadgerTokenUri) { Content = new StringContent("{\"appId\":\"5cbed6ac-a083-4e14-b191-b4ba07653de2\"}", Encoding.UTF8, "application/json") };
         request.Headers.TryAddWithoutValidation("AppId", "1141147648");
         using var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        ValidateApiUri(response.RequestMessage?.RequestUri ?? _options.BadgerTokenUri);
         MapStatus(response);
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
         if (json.RootElement.ValueKind == JsonValueKind.String) return json.RootElement.GetString()!;
@@ -134,9 +135,7 @@ public sealed class OneDrivePersonalProvider : IPublicCloudProvider, IAsyncDispo
     private async Task<JsonDocument> GetJsonAsync(Uri uri, CancellationToken cancellationToken)
     {
         ValidateApiUri(uri);
-        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-        AddSessionHeaders(request);
-        using var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        using var response = await SendGetFollowingRedirectsAsync(uri, ValidateApiUri, AddSessionHeaders, cancellationToken);
         MapStatus(response);
         try { return JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken)); }
         catch (JsonException ex) { throw new ProviderResponseChangedException($"OneDrive returned incompatible data: {ex.Message}"); }
@@ -193,6 +192,32 @@ public sealed class OneDrivePersonalProvider : IPublicCloudProvider, IAsyncDispo
         if (uri.Scheme != Uri.UriSchemeHttps || host.EndsWith(".sharepoint.com", StringComparison.OrdinalIgnoreCase)
             || !(host.EndsWith(".1drv.com", StringComparison.OrdinalIgnoreCase) || host.EndsWith(".onedrive.com", StringComparison.OrdinalIgnoreCase) || host.EndsWith(".livefilestore.com", StringComparison.OrdinalIgnoreCase) || host.EndsWith(".microsoftusercontent.com", StringComparison.OrdinalIgnoreCase)))
             throw new ProviderResponseChangedException("OneDrive returned an unexpected content host.");
+    }
+    private static void ValidateShareUri(Uri uri)
+    {
+        if (uri.Scheme != Uri.UriSchemeHttps || !(uri.IdnHost.Equals("1drv.ms", StringComparison.OrdinalIgnoreCase) || uri.IdnHost.Equals("onedrive.live.com", StringComparison.OrdinalIgnoreCase)))
+            throw new ProviderResponseChangedException("The OneDrive share redirected to an unsupported host.");
+    }
+    private async Task<HttpResponseMessage> SendGetFollowingRedirectsAsync(Uri initialUri, Action<Uri> validator, Action<HttpRequestMessage>? configure, CancellationToken cancellationToken)
+    {
+        var current = initialUri;
+        for (var redirect = 0; redirect <= 10; redirect++)
+        {
+            validator(current);
+            using var request = new HttpRequestMessage(HttpMethod.Get, current);
+            configure?.Invoke(request);
+            var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            var finalUri = response.RequestMessage?.RequestUri ?? current;
+            try { validator(finalUri); }
+            catch { response.Dispose(); throw; }
+            if ((int)response.StatusCode is >= 300 and < 400 && response.Headers.Location is not null)
+            {
+                var next = response.Headers.Location.IsAbsoluteUri ? response.Headers.Location : new Uri(finalUri, response.Headers.Location);
+                response.Dispose(); current = next; continue;
+            }
+            return response;
+        }
+        throw new ProviderResponseChangedException("OneDrive returned too many redirects.");
     }
     private static Dictionary<string, string> ParseQuery(string query)
     {

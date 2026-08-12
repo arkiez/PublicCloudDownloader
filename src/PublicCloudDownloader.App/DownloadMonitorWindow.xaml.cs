@@ -33,6 +33,7 @@ public partial class DownloadMonitorWindow : Window
     {
         SetRunning(false);
         if (result.Completion == DownloadCompletion.Cancelled) { Heading.Text = "Download cancelled"; StatusText.Text = "No incomplete files were kept."; FinalMessage = "Download cancelled."; return; }
+        if (result.Completion == DownloadCompletion.Failed) { Heading.Text = "Download could not start"; StatusText.Text = result.Failures.FirstOrDefault()?.Message ?? "The output folder could not be created."; FinalMessage = "Download could not start."; return; }
         if (result.Failures.Count > 0)
         {
             Heading.Text = "Completed with errors"; StatusText.Text = $"{result.Downloaded:N0} downloaded, {result.Skipped:N0} skipped, {result.Failures.Count:N0} failed.";
@@ -43,7 +44,7 @@ public partial class DownloadMonitorWindow : Window
     }
     private void SetRunning(bool running) { CancelButton.Visibility = running ? Visibility.Visible : Visibility.Collapsed; CloseButton.Visibility = running ? Visibility.Collapsed : Visibility.Visible; if (running) RetryButton.Visibility = Visibility.Collapsed; }
     private void Cancel_Click(object sender, RoutedEventArgs e) => _cancellation?.Cancel();
-    private async void Retry_Click(object sender, RoutedEventArgs e) { _policy = ExistingFilePolicy.Overwrite; await RunAsync(); }
+    private async void Retry_Click(object sender, RoutedEventArgs e) => await RunAsync();
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e) { if (CancelButton.Visibility == Visibility.Visible) { _cancellation?.Cancel(); e.Cancel = true; } base.OnClosing(e); }
 }
