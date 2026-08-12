@@ -29,3 +29,6 @@ public class CloudProviderException(string code, string message, Exception? inne
 
 public sealed class PrivateLinkException(string message) : CloudProviderException("not-public", message);
 public sealed class UnsupportedCloudItemException(string message) : CloudProviderException("unsupported-item", message);
+public sealed class ProviderResponseChangedException(string message) : CloudProviderException("response-changed", message);
+public sealed class DownloadDisabledException(string message) : CloudProviderException("download-disabled", message);
+public sealed class ProviderThrottledException(string message) : CloudProviderException("throttled", message);
