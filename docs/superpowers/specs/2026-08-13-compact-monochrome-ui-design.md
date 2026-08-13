@@ -71,9 +71,11 @@ large nested card and excess empty space in the current interface.
 7. A compact trust statement (`Public links only`) sits to the left of the
    black Download button. The button uses a download vector icon plus text and
    remains the only filled primary action.
-8. A 44-pixel secondary information-icon button appears immediately before
-   Download. Hovering it reveals a wrapped tooltip that explains supported
-   services; keyboard and screen-reader users receive the same full copy.
+8. A 44-pixel secondary information ToggleButton appears immediately before
+   Download. Hovering it reveals a wrapped tooltip; activating it with mouse,
+   Enter, or Space toggles a non-interactive popup with the same full supported-
+   services copy. Keyboard and screen-reader users receive the full copy and
+   the toggle's disclosure state.
 
 Tab order follows the visual order: link, Paste, destination, Browse,
 supported-services information, Download. Enter continues to invoke Download
@@ -135,8 +137,9 @@ accessibility and must not alter workflow behavior.
 6. Confirm the creator credit exactly matches
    `Arkie'z K. Khositkhanawut` and is not interactive.
 7. Confirm long links, long paths, and validation errors remain readable
-   without expanding the default window; hover the supported-services icon and
-   verify its full wrapped tooltip, keyboard focus, and screen-reader text.
+   without expanding the default window; hover the supported-services toggle
+   and verify its full wrapped tooltip, keyboard focus, screen-reader text,
+   popup open/close behavior, and toggle state.
 8. Open the conflict and monitor windows and verify shared styles remain
    usable and no behavior has changed.
 

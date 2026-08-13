@@ -123,26 +123,38 @@
                                    Foreground="{StaticResource SecondaryTextBrush}" Margin="0,2,0,0" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <Button Width="44" MinHeight="44" Margin="0,0,10,0" Padding="0"
-                                Style="{StaticResource SecondaryButton}"
+                        <ToggleButton x:Name="SupportedServicesToggle" Width="44" MinHeight="44" Margin="0,0,10,0" Padding="0"
+                                Style="{StaticResource SecondaryToggleButton}"
                                 ToolTipService.InitialShowDelay="300" ToolTipService.ShowDuration="10000"
+                                ToolTipService.ShowsToolTipOnKeyboardFocus="True"
                                 AutomationProperties.Name="Supported services information"
                                 AutomationProperties.HelpText="Supports public Google Drive and OneDrive Personal files/folders. Business and SharePoint links aren't supported.">
-                            <Button.ToolTip>
+                            <ToggleButton.ToolTip>
                                 <ToolTip MaxWidth="360">
                                     <TextBlock TextWrapping="Wrap"
                                                Text="Supports public Google Drive and OneDrive Personal files/folders. Business and SharePoint links aren't supported." />
                                 </ToolTip>
-                            </Button.ToolTip>
+                            </ToggleButton.ToolTip>
                             <Viewbox Width="16" Height="16">
                                 <Canvas Width="16" Height="16">
                                     <Ellipse Width="14" Height="14" Canvas.Left="1" Canvas.Top="1"
-                                             Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5" />
-                                    <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5"
+                                             Stroke="{StaticResource TextBrush}" StrokeThickness="1.5" />
+                                    <Path Stroke="{StaticResource TextBrush}" StrokeThickness="1.5"
                                           StrokeStartLineCap="Round" Data="M8,7 L8,11 M8,4.5 L8,5" />
                                 </Canvas>
                             </Viewbox>
-                        </Button>
+                        </ToggleButton>
+                        <Popup PlacementTarget="{Binding ElementName=SupportedServicesToggle}" Placement="Bottom"
+                               IsOpen="{Binding IsChecked, ElementName=SupportedServicesToggle, Mode=TwoWay}"
+                               StaysOpen="False" AllowsTransparency="True">
+                            <Border Width="360" Margin="0,6,0,0" Padding="12,10" CornerRadius="8"
+                                    Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1" Focusable="False">
+                                <TextBlock TextWrapping="Wrap" Foreground="{StaticResource SecondaryTextBrush}"
+                                           Focusable="False"
+                                           Text="Supports public Google Drive and OneDrive Personal files/folders. Business and SharePoint links aren't supported." />
+                            </Border>
+                        </Popup>
                         <Button MinWidth="142" MinHeight="44" Style="{StaticResource PrimaryButton}"
                                 IsEnabled="{Binding CanDownload}" Click="Download_Click" IsDefault="True"
                                 AutomationProperties.Name="Download">
