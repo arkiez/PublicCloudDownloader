@@ -189,8 +189,14 @@ public sealed class OneDrivePersonalProvider : IPublicCloudProvider, IAsyncDispo
     private static void ValidateContentUri(Uri uri)
     {
         var host = uri.IdnHost;
-        if (uri.Scheme != Uri.UriSchemeHttps || host.EndsWith(".sharepoint.com", StringComparison.OrdinalIgnoreCase)
-            || !(host.EndsWith(".1drv.com", StringComparison.OrdinalIgnoreCase) || host.EndsWith(".onedrive.com", StringComparison.OrdinalIgnoreCase) || host.EndsWith(".livefilestore.com", StringComparison.OrdinalIgnoreCase) || host.EndsWith(".microsoftusercontent.com", StringComparison.OrdinalIgnoreCase)))
+        var allowed = host.Equals("my.microsoftpersonalcontent.com", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".1drv.com", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".onedrive.com", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".livefilestore.com", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".microsoftusercontent.com", StringComparison.OrdinalIgnoreCase);
+        if (uri.Scheme != Uri.UriSchemeHttps
+            || host.EndsWith(".sharepoint.com", StringComparison.OrdinalIgnoreCase)
+            || !allowed)
             throw new ProviderResponseChangedException("OneDrive returned an unexpected content host.");
     }
     private static void ValidateShareUri(Uri uri)

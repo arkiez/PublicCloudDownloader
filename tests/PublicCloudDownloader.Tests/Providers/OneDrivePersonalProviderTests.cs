@@ -37,6 +37,33 @@ public sealed class OneDrivePersonalProviderTests
     }
 
     [Fact]
+    public async Task Download_accepts_the_exact_personal_content_service_host()
+    {
+        using var handler = new OneDriveHandler { UsePersonalContentHost = true };
+        await using var provider = new OneDrivePersonalProvider(handler);
+        CloudLinkParser.TryParse("https://1drv.ms/f/c/bdbb59c1db4a58dd/ExampleToken", out var link, out _);
+        var manifest = await provider.BuildManifestAsync(link!, null, default);
+        var item = manifest.Items.Single(x => x.RelativePath == "photo.jpg");
+
+        await using var lease = await provider.OpenDownloadAsync(item, default);
+
+        Assert.Equal("new-content", await new StreamReader(lease.Content).ReadToEndAsync());
+    }
+
+    [Fact]
+    public async Task Download_rejects_a_personal_content_host_lookalike()
+    {
+        using var handler = new OneDriveHandler { UsePersonalContentLookalikeHost = true };
+        await using var provider = new OneDrivePersonalProvider(handler);
+        CloudLinkParser.TryParse("https://1drv.ms/f/c/bdbb59c1db4a58dd/ExampleToken", out var link, out _);
+        var manifest = await provider.BuildManifestAsync(link!, null, default);
+        var item = manifest.Items.Single(x => x.RelativePath == "photo.jpg");
+
+        await Assert.ThrowsAsync<ProviderResponseChangedException>(
+            () => provider.OpenDownloadAsync(item, default));
+    }
+
+    [Fact]
     public async Task Download_rejects_a_final_redirect_to_an_untrusted_host()
     {
         using var handler = new OneDriveHandler { RedirectContentToEvilHost = true };
@@ -62,6 +89,8 @@ public sealed class OneDrivePersonalProviderTests
         public List<string?> BadgerRequests { get; } = [];
         public bool RedirectContentToEvilHost { get; init; }
         public bool RedirectShortToSharePoint { get; init; }
+        public bool UsePersonalContentHost { get; init; }
+        public bool UsePersonalContentLookalikeHost { get; init; }
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var uri = request.RequestUri!.ToString(); Requests.Add(uri);
@@ -79,11 +108,23 @@ public sealed class OneDrivePersonalProviderTests
             if (uri.Contains("/items/folder2/children", StringComparison.Ordinal))
                 return Json("{\"value\":[{\"id\":\"file2\",\"name\":\"readme.txt\",\"size\":3,\"file\":{\"mimeType\":\"text/plain\"},\"parentReference\":{\"driveId\":\"drive\"}}]}", request);
             if (uri.Contains("/items/file1", StringComparison.Ordinal))
-                return Json("{\"id\":\"file1\",\"@content.downloadUrl\":\"https://public.dm.files.1drv.com/content\"}", request);
-            if (uri.StartsWith("https://public.dm.files.1drv.com", StringComparison.Ordinal))
+            {
+                var contentUrl = UsePersonalContentLookalikeHost
+                    ? "https://my.microsoftpersonalcontent.com.evil.example/content"
+                    : UsePersonalContentHost
+                        ? "https://my.microsoftpersonalcontent.com/content"
+                        : "https://public.dm.files.1drv.com/content";
+                return Json($"{{\"id\":\"file1\",\"@content.downloadUrl\":\"{contentUrl}\"}}", request);
+            }
+            if (uri.StartsWith("https://public.dm.files.1drv.com", StringComparison.Ordinal)
+                || uri.StartsWith("https://my.microsoftpersonalcontent.com", StringComparison.Ordinal))
             {
                 if (RedirectContentToEvilHost) request.RequestUri = new Uri("https://evil.example/content");
-                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("new-content", Encoding.UTF8, "application/octet-stream"), RequestMessage = request });
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("new-content", Encoding.UTF8, "application/octet-stream"),
+                    RequestMessage = request
+                });
             }
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound) { RequestMessage = request });
         }
