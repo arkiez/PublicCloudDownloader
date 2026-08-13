@@ -49,7 +49,6 @@
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
                                 <Setter TargetName="TextBoxChrome" Property="BorderBrush" Value="{StaticResource FocusBrush}" />
-                                <Setter TargetName="TextBoxChrome" Property="BorderThickness" Value="2" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="TextBoxChrome" Property="Background" Value="{StaticResource DisabledSurfaceBrush}" />
