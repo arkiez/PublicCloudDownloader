@@ -71,12 +71,14 @@ large nested card and excess empty space in the current interface.
 7. A compact trust statement (`Public links only`) sits to the left of the
    black Download button. The button uses a download vector icon plus text and
    remains the only filled primary action.
-8. The supported-services explanation becomes a shallow neutral information
-   strip. It wraps when the window is narrowed and never clips.
+8. A 44-pixel secondary information-icon button appears immediately before
+   Download. Hovering it reveals a wrapped tooltip that explains supported
+   services; keyboard and screen-reader users receive the same full copy.
 
 Tab order follows the visual order: link, Paste, destination, Browse,
-Download. Enter continues to invoke Download when it is enabled. All existing
-AutomationProperties names remain present or are made more descriptive.
+supported-services information, Download. Enter continues to invoke Download
+when it is enabled. All existing AutomationProperties names remain present or
+are made more descriptive.
 
 ### Footer and creator credit
 
@@ -132,8 +134,9 @@ accessibility and must not alter workflow behavior.
 5. Navigate the complete form using only Tab, Shift+Tab, Enter, and Space.
 6. Confirm the creator credit exactly matches
    `Arkie'z K. Khositkhanawut` and is not interactive.
-7. Confirm long links, long paths, validation errors, and wrapped support text
-   remain readable without expanding the default window.
+7. Confirm long links, long paths, and validation errors remain readable
+   without expanding the default window; hover the supported-services icon and
+   verify its full wrapped tooltip, keyboard focus, and screen-reader text.
 8. Open the conflict and monitor windows and verify shared styles remain
    usable and no behavior has changed.
 

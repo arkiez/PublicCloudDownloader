@@ -53,7 +53,6 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="12" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Text="PUBLIC FILE OR FOLDER LINK" FontSize="12" FontWeight="SemiBold"
@@ -123,41 +122,42 @@
                         <TextBlock Text="Access is checked before download." FontSize="12"
                                    Foreground="{StaticResource SecondaryTextBrush}" Margin="0,2,0,0" />
                     </StackPanel>
-                    <Button Grid.Column="1" MinWidth="142" MinHeight="44" Style="{StaticResource PrimaryButton}"
-                            IsEnabled="{Binding CanDownload}" Click="Download_Click" IsDefault="True"
-                            AutomationProperties.Name="Download">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Viewbox Width="16" Height="16" Margin="0,0,7,0">
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button Width="44" MinHeight="44" Margin="0,0,10,0" Padding="0"
+                                Style="{StaticResource SecondaryButton}"
+                                ToolTipService.InitialShowDelay="300" ToolTipService.ShowDuration="10000"
+                                AutomationProperties.Name="Supported services information"
+                                AutomationProperties.HelpText="Supports public Google Drive and OneDrive Personal files/folders. Business and SharePoint links aren't supported.">
+                            <Button.ToolTip>
+                                <ToolTip MaxWidth="360">
+                                    <TextBlock TextWrapping="Wrap"
+                                               Text="Supports public Google Drive and OneDrive Personal files/folders. Business and SharePoint links aren't supported." />
+                                </ToolTip>
+                            </Button.ToolTip>
+                            <Viewbox Width="16" Height="16">
                                 <Canvas Width="16" Height="16">
-                                    <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                          Data="M7.25,1 L8.75,1 L8.75,9.2 L11.5,6.45 L12.56,7.51 L8,12.07 L3.44,7.51 L4.5,6.45 L7.25,9.2 Z M2,13 L14,13 L14,15 L2,15 Z" />
+                                    <Ellipse Width="14" Height="14" Canvas.Left="1" Canvas.Top="1"
+                                             Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5" />
+                                    <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5"
+                                          StrokeStartLineCap="Round" Data="M8,7 L8,11 M8,4.5 L8,5" />
                                 </Canvas>
                             </Viewbox>
-                            <TextBlock Text="Download" />
-                        </StackPanel>
-                    </Button>
+                        </Button>
+                        <Button MinWidth="142" MinHeight="44" Style="{StaticResource PrimaryButton}"
+                                IsEnabled="{Binding CanDownload}" Click="Download_Click" IsDefault="True"
+                                AutomationProperties.Name="Download">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Viewbox Width="16" Height="16" Margin="0,0,7,0">
+                                    <Canvas Width="16" Height="16">
+                                        <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                              Data="M7.25,1 L8.75,1 L8.75,9.2 L11.5,6.45 L12.56,7.51 L8,12.07 L3.44,7.51 L4.5,6.45 L7.25,9.2 Z M2,13 L14,13 L14,15 L2,15 Z" />
+                                    </Canvas>
+                                </Viewbox>
+                                <TextBlock Text="Download" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
                 </Grid>
-
-                <Border Grid.Row="9" Margin="0,8,0,0" Padding="10,7" Background="{StaticResource SubtleSurfaceBrush}"
-                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="24" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Viewbox Width="16" Height="16" VerticalAlignment="Top" Margin="0,1,8,0">
-                            <Canvas Width="16" Height="16">
-                                <Ellipse Width="14" Height="14" Canvas.Left="1" Canvas.Top="1"
-                                         Stroke="{StaticResource SecondaryTextBrush}" StrokeThickness="1.5" />
-                                <Path Stroke="{StaticResource SecondaryTextBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round"
-                                      Data="M8,7 L8,11 M8,4.5 L8,5" />
-                            </Canvas>
-                        </Viewbox>
-                        <TextBlock Grid.Column="1" TextWrapping="Wrap" FontSize="11.5"
-                                   Foreground="{StaticResource SecondaryTextBrush}"
-                                   Text="Supports public Google Drive and OneDrive Personal files/folders. Business and SharePoint links aren't supported." />
-                    </Grid>
-                </Border>
             </Grid>
         </Border>
 
