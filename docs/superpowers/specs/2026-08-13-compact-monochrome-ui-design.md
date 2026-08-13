@@ -18,7 +18,7 @@ native on Windows 10 and Windows 11, remain easy to scan, and keep the source
 link, destination, and Download action as the only primary workflow.
 
 The main window will open at approximately `720 x 500` device-independent
-pixels with a minimum size near `650 x 460`. It remains resizable. The native
+pixels with an exact minimum size of `650 x 470`. It remains resizable. The native
 Windows title bar is retained for familiar window controls, keyboard behavior,
 and accessibility.
 

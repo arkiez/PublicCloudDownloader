@@ -275,4 +275,4 @@ git status --short
 git log -3 --oneline
 ```
 
-Expected: no whitespace errors, no unrelated modifications, and two implementation commits after the design-spec commit. If visual inspection required a correction, rerun all Task 3 checks and commit it as `fix: polish compact monochrome layout`; otherwise do not create an empty commit.
+Expected: no whitespace errors, no unrelated modifications, and the complete `539c126..HEAD` feature history reviewed. If visual inspection required a correction, rerun all Task 3 checks and commit it as `fix: polish compact monochrome layout`; otherwise do not create an empty commit.

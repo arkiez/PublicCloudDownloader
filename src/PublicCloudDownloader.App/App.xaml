@@ -61,17 +61,24 @@
         </Style>
 
         <ControlTemplate x:Key="ButtonBaseChromeTemplate" TargetType="ButtonBase">
-            <Border x:Name="ButtonChrome" CornerRadius="8"
-                    Padding="{TemplateBinding Padding}"
-                    Background="{TemplateBinding Background}"
-                    BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="{TemplateBinding BorderThickness}">
-                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-            </Border>
+            <Grid>
+                <Border x:Name="ButtonChrome" CornerRadius="8"
+                        Padding="{TemplateBinding Padding}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}">
+                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <Border x:Name="KeyboardFocusRing" Margin="2" CornerRadius="6"
+                        BorderBrush="{StaticResource FocusBrush}" BorderThickness="2"
+                        IsHitTestVisible="False" Visibility="Collapsed">
+                    <Border Margin="2" CornerRadius="3"
+                            BorderBrush="{StaticResource SurfaceBrush}" BorderThickness="2" />
+                </Border>
+            </Grid>
             <ControlTemplate.Triggers>
                 <Trigger Property="IsKeyboardFocused" Value="True">
-                    <Setter TargetName="ButtonChrome" Property="BorderBrush" Value="{StaticResource FocusBrush}" />
-                    <Setter TargetName="ButtonChrome" Property="BorderThickness" Value="2" />
+                    <Setter TargetName="KeyboardFocusRing" Property="Visibility" Value="Visible" />
                 </Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate>
