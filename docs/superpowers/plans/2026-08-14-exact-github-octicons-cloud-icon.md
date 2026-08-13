@@ -13,7 +13,7 @@
 - `assets/Github-Octicons-Cloud-16.ico` is the canonical icon and its SHA-256 is exactly `3BD295FCE4CD7F33A563F3B2D60CADAD53583491F29E52B571016E2B9E2B979E`.
 - Preserve the canonical ICO byte-for-byte; do not redraw, resize, recompress, reorder, deduplicate, or regenerate any frame.
 - The exact ordered logical frame sizes are `256, 256, 128, 96, 72, 64, 48, 32, 24, 16`; every frame is square, one-plane, and 32-bit.
-- The first two frames are PNG; the remaining eight frames are uncompressed 40-byte `BITMAPINFOHEADER` DIB payloads whose stored height is twice the logical ICO height.
+- The first two directory entries are PNG: the first intentionally embeds a 512×512 PNG behind a 256-pixel ICO directory entry, and the second embeds a 256×256 PNG. The remaining eight frames are uncompressed 40-byte `BITMAPINFOHEADER` DIB payloads whose stored height is twice the logical ICO height.
 - Product version remains exactly `1.1.0`; file and assembly versions remain exactly `1.1.0.0`.
 - Do not change C#, XAML, product naming, provider behavior, UI layout, colors, text, animation, or branding.
 - Do not modify historical 1.0.0 specifications.
@@ -161,6 +161,7 @@ $ErrorActionPreference = 'Stop'
 $expectedHash = '3BD295FCE4CD7F33A563F3B2D60CADAD53583491F29E52B571016E2B9E2B979E'
 $expectedSizes = @(256, 256, 128, 96, 72, 64, 48, 32, 24, 16)
 $expectedKinds = @('PNG', 'PNG', 'DIB', 'DIB', 'DIB', 'DIB', 'DIB', 'DIB', 'DIB', 'DIB')
+$expectedPngSizes = @(512, 256)
 $fullIconPath = [System.IO.Path]::GetFullPath($IconPath)
 $fullCanonicalPath = [System.IO.Path]::GetFullPath($CanonicalPath)
 $bytes = [System.IO.File]::ReadAllBytes($fullIconPath)
@@ -190,7 +191,7 @@ if ($payloadStart -lt [uint64]$directoryLength -or
 }
 ```
 
-For expected PNG entries, require at least 33 declared bytes, the PNG signature, IHDR length 13 and type `IHDR`, matching dimensions, bit depth 8, and color type 6. For expected DIB entries, require at least 40 declared bytes and:
+For expected PNG entries, require at least 33 declared bytes, the PNG signature, IHDR length 13 and type `IHDR`, embedded width/height matching `$expectedPngSizes[$index]`, bit depth 8, and color type 6. The first 512×512 payload behind a 256-pixel directory entry is intentional and must not be normalized. For expected DIB entries, require at least 40 declared bytes and:
 
 ```powershell
 $headerSize = Read-U32 $offset

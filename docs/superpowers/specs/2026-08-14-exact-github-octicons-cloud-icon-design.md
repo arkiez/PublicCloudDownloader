@@ -18,7 +18,7 @@ The canonical ICO contains exactly ten 32-bit square entries, in this order:
 256, 256, 128, 96, 72, 64, 48, 32, 24, 16
 ```
 
-The duplicate 256-pixel entries are intentional. No frame may be removed, reordered, resized, recompressed, redrawn, or regenerated.
+The duplicate 256-pixel directory entries are intentional. The first entry embeds a 512×512 PNG despite its ICO directory byte encoding 256; the second embeds a 256×256 PNG. This approved mismatch is part of the supplied binary. No frame may be removed, reordered, resized, recompressed, redrawn, or regenerated.
 
 ## Source and Build Flow
 
@@ -33,7 +33,7 @@ The WPF project continues to embed `src/PublicCloudDownloader.App/Assets/PublicC
 - the ICO header and ten directory entries;
 - exact entry order, including both 256-pixel entries;
 - square dimensions, one plane, and 32-bit metadata for every entry;
-- safe payload bounds; valid PNG headers for the two 256-pixel entries; and valid 32-bit DIB headers for the 128, 96, 72, 64, 48, 32, 24, and 16-pixel entries;
+- safe payload bounds; valid PNG headers with exact embedded dimensions 512×512 and 256×256 for the two 256-pixel directory entries; and valid 32-bit DIB headers for the 128, 96, 72, 64, 48, 32, 24, and 16-pixel entries;
 - byte-for-byte equality with the canonical asset;
 - the approved canonical SHA-256.
 
