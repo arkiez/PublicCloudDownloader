@@ -42,3 +42,8 @@ dotnet test PublicCloudDownloader.sln -c Release
 ```
 
 The canonical product version is defined in `Version.props`.
+
+Every user-facing delivery increments the patch version once and records its
+requirements and verification evidence in `docs/requirements/`. See
+[`2026-08-14-versioning-and-release-requirements.md`](docs/requirements/2026-08-14-versioning-and-release-requirements.md)
+for the release policy and checklist.
