@@ -24,12 +24,21 @@ for ($index = 0; $index -lt $count; $index++) {
     $length = Read-U32 ($entry + 8)
     $offset = Read-U32 ($entry + 12)
     if ($width -ne $height -or $planes -ne 1 -or $bits -ne 32) { throw "Invalid ${width}x${height} frame metadata." }
-    if ($offset + $length -gt $bytes.Length) { throw "Frame $width is outside the ICO payload." }
+    $payloadStart = [uint64]$offset
+    $payloadLength = [uint64]$length
+    $fileLength = [uint64]$bytes.Length
+    if ($payloadStart -gt $fileLength -or $payloadLength -gt ($fileLength - $payloadStart)) { throw "Frame $width is outside the ICO payload." }
+    if ($payloadLength -lt 33) { throw "Frame $width payload is too short for a PNG IHDR chunk." }
     $pngSignature = [byte[]](137, 80, 78, 71, 13, 10, 26, 10)
     for ($signatureIndex = 0; $signatureIndex -lt $pngSignature.Count; $signatureIndex++) {
         if ($bytes[$offset + $signatureIndex] -ne $pngSignature[$signatureIndex]) {
             throw "Frame $width is not PNG-compressed."
         }
+    }
+    if ((Read-Be32 ($offset + 8)) -ne 13 -or
+        $bytes[$offset + 12] -ne 73 -or $bytes[$offset + 13] -ne 72 -or
+        $bytes[$offset + 14] -ne 68 -or $bytes[$offset + 15] -ne 82) {
+        throw "Frame $width has an invalid PNG IHDR chunk."
     }
     if ((Read-Be32 ($offset + 16)) -ne $width -or (Read-Be32 ($offset + 20)) -ne $height) { throw "Frame $width PNG dimensions do not match its ICO entry." }
     if ($bytes[$offset + 24] -ne 8 -or $bytes[$offset + 25] -ne 6) { throw "Frame $width is not 32-bit RGBA PNG." }
