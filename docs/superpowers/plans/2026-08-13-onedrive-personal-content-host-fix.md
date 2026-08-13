@@ -222,7 +222,7 @@ Replace only that directory, then run:
 dotnet publish src\PublicCloudDownloader.App\PublicCloudDownloader.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -o C:\Users\Acer27arkiez\Documents\PublicCloudDownloader\dist\PublicCloudDownloader -m:1 --disable-build-servers
 ```
 
-Copy `docs/PublicCloudDownloader-README.txt` to `README.txt` while replacing `{{VERSION}}` with `1.0.0`; copy `src/PublicCloudDownloader.App/Assets/PublicCloudDownloader.ico`; create empty `data` and `logs` directories.
+Copy `docs/PublicCloudDownloader-README.txt` to `README.txt`, replacing `{{VERSION}}` with the canonical `Version` read from `Version.props`.
 
 - [ ] **Step 11: Verify the packaged payload**
 

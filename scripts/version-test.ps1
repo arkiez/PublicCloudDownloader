@@ -1,8 +1,16 @@
+param([string]$ExpectedVersion)
+
 $ErrorActionPreference = 'Stop'
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 [xml]$versionXml = Get-Content (Join-Path $repoRoot 'Version.props')
 $version = [string]$versionXml.Project.PropertyGroup.Version
+$fileVersion = [string]$versionXml.Project.PropertyGroup.FileVersion
+$assemblyVersion = [string]$versionXml.Project.PropertyGroup.AssemblyVersion
 if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Version.props must contain a strict major.minor.patch Version.' }
+$expectedFourPart = "$version.0"
+if ($fileVersion -ne $expectedFourPart) { throw "FileVersion must be $expectedFourPart." }
+if ($assemblyVersion -ne $expectedFourPart) { throw "AssemblyVersion must be $expectedFourPart." }
+if ($ExpectedVersion -and $version -ne $ExpectedVersion) { throw "Expected Version $ExpectedVersion but found $version." }
 
 $projectFiles = Get-ChildItem (Join-Path $repoRoot 'src') -Recurse -File -Include *.csproj | Where-Object { $_.FullName -notmatch '[\\/](bin|obj)[\\/]' }
 foreach ($project in $projectFiles) {
