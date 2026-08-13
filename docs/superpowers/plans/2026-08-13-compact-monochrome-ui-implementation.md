@@ -4,7 +4,7 @@
 
 **Goal:** Replace the oversized blue main window with the approved compact 720 x 500 monochrome interface and add the plain-text creator credit.
 
-**Architecture:** Preserve every binding, event handler, and download behavior. Define the white, black, and neutral-gray design tokens plus accessible rounded controls in `App.xaml`, then rebuild only `MainWindow.xaml` as a compact single-column utility. Static XAML contract tests protect the dimensions, palette, workflow hooks, accessibility metadata, and creator copy.
+**Architecture:** Preserve every binding, event handler, and download behavior. Define the white, black, and neutral-gray design tokens plus accessible rounded controls in `App.xaml`, then rebuild only `MainWindow.xaml` as a compact single-column utility. WPF compilation, the existing behavioral suite, and rendered keyboard/resize/scaling inspection verify the result without brittle source-text tests.
 
 **Tech Stack:** .NET 8, WPF XAML, C# 12, xUnit 2.9.3
 
@@ -19,12 +19,12 @@
 - Do not change provider, validation, filesystem, conflict, download, progress, logging, or version behavior.
 - Add no package, external font, bitmap, or icon library; use inline WPF vector paths.
 - Keep visible application copy in English.
+- Approved execution override: XAML is treated as declarative visual configuration for this redesign. Do not add tests that grep or parse XAML source; verify it through WPF compilation, the existing behavioral suite, and rendered keyboard/resize/scaling inspection.
 
 ## File Map
 
 - Modify `src/PublicCloudDownloader.App/App.xaml`: monochrome tokens and shared Window, TextBox, Button, ListBox, and ProgressBar styles.
 - Modify `src/PublicCloudDownloader.App/MainWindow.xaml`: compact header, form, action row, support strip, and creator/version footer.
-- Create `tests/PublicCloudDownloader.Tests/UI/MainWindowMarkupTests.cs`: XAML contract tests that need no WPF UI thread.
 - Leave `MainWindow.xaml.cs`, `MainViewModel.cs`, provider code, and workflow code unchanged.
 
 ---
@@ -32,66 +32,13 @@
 ### Task 1: Establish the monochrome application visual system
 
 **Files:**
-- Create: `tests/PublicCloudDownloader.Tests/UI/MainWindowMarkupTests.cs`
 - Modify: `src/PublicCloudDownloader.App/App.xaml`
-- Test: `tests/PublicCloudDownloader.Tests/UI/MainWindowMarkupTests.cs`
 
 **Interfaces:**
 - Consumes: current resource keys `PrimaryBrush`, `AccentBrush`, `AccentHoverBrush`, `BackgroundBrush`, `SurfaceBrush`, `TextBrush`, `SecondaryTextBrush`, `BorderBrush`, `SuccessBrush`, `ErrorBrush`, `PrimaryButton`, and `SecondaryButton`.
-- Produces: neutral resource keys `AccentPressedBrush`, `SubtleSurfaceBrush`, `DisabledSurfaceBrush`, `DisabledTextBrush`, `BorderHoverBrush`, and `FocusBrush`; named template borders `TextBoxChrome` and `ButtonChrome`.
+- Produces: neutral resource keys `AccentPressedBrush`, `SubtleSurfaceBrush`, `DisabledSurfaceBrush`, `DisabledTextBrush`, `BorderHoverBrush`, and `FocusBrush`; reusable rounded TextBox and Button templates.
 
-- [ ] **Step 1: Write the failing application-resource contract test**
-
-Create `tests/PublicCloudDownloader.Tests/UI/MainWindowMarkupTests.cs`:
-
-```csharp
-namespace PublicCloudDownloader.Tests.UI;
-
-public sealed class MainWindowMarkupTests
-{
-    [Fact]
-    public void Application_resources_define_the_monochrome_control_system()
-    {
-        var markup = File.ReadAllText(ProjectFile("src", "PublicCloudDownloader.App", "App.xaml"));
-
-        Assert.Contains("x:Key=\"PrimaryBrush\" Color=\"#171717\"", markup);
-        Assert.Contains("x:Key=\"AccentBrush\" Color=\"#171717\"", markup);
-        Assert.Contains("x:Key=\"BackgroundBrush\" Color=\"#F5F5F5\"", markup);
-        Assert.Contains("x:Key=\"SurfaceBrush\" Color=\"#FFFFFF\"", markup);
-        Assert.Contains("x:Key=\"SecondaryTextBrush\" Color=\"#525252\"", markup);
-        Assert.Contains("x:Key=\"BorderBrush\" Color=\"#D4D4D4\"", markup);
-        Assert.Contains("x:Name=\"TextBoxChrome\"", markup);
-        Assert.Contains("x:Name=\"ButtonChrome\"", markup);
-        Assert.Contains("Property=\"IsKeyboardFocused\" Value=\"True\"", markup);
-        Assert.False(markup.Contains("#0369A1", StringComparison.OrdinalIgnoreCase));
-        Assert.False(markup.Contains("#075985", StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static string ProjectFile(params string[] segments)
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "PublicCloudDownloader.sln")))
-            directory = directory.Parent;
-
-        if (directory is null)
-            throw new DirectoryNotFoundException("Could not locate the PublicCloudDownloader repository root.");
-
-        return Path.Combine(new[] { directory.FullName }.Concat(segments).ToArray());
-    }
-}
-```
-
-- [ ] **Step 2: Verify the test fails against the legacy palette**
-
-Run:
-
-```powershell
-dotnet test tests/PublicCloudDownloader.Tests/PublicCloudDownloader.Tests.csproj -c Release --filter "FullyQualifiedName~MainWindowMarkupTests.Application_resources" --no-restore
-```
-
-Expected: FAIL because `App.xaml` still uses blue resources and has no named rounded-control templates.
-
-- [ ] **Step 3: Replace the palette with exact monochrome tokens**
+- [ ] **Step 1: Replace the palette with exact monochrome tokens**
 
 Use this complete token set at the top of `Application.Resources`:
 
@@ -114,7 +61,7 @@ Use this complete token set at the top of `Application.Resources`:
 <SolidColorBrush x:Key="ErrorBrush" Color="#171717" />
 ```
 
-- [ ] **Step 4: Implement the rounded TextBox and Button templates**
+- [ ] **Step 2: Implement the rounded TextBox and Button templates**
 
 Keep the current style keys so every window inherits the redesign. Apply these exact structural rules:
 
@@ -183,19 +130,19 @@ Keep the current style keys so every window inherits the redesign. Apply these e
 
 Define the implicit Button style from `BaseButtonStyle`. Define `PrimaryButton` with black/white normal, `#2B2B2B` hover, black pressed, and gray disabled states. Define `SecondaryButton` with white/black normal, `#FAFAFA` hover, and gray pressed/disabled states. Retain the existing Window style with Segoe UI and add layout rounding. Set ListBox to white/black/gray borders and ProgressBar foreground to `PrimaryBrush`.
 
-- [ ] **Step 5: Run the targeted test and compile WPF XAML**
+- [ ] **Step 3: Compile WPF XAML and run existing behavioral tests**
 
 ```powershell
-dotnet test tests/PublicCloudDownloader.Tests/PublicCloudDownloader.Tests.csproj -c Release --filter "FullyQualifiedName~MainWindowMarkupTests.Application_resources" --no-restore
 dotnet build src/PublicCloudDownloader.App/PublicCloudDownloader.App.csproj -c Release --no-restore
+dotnet test tests/PublicCloudDownloader.Tests/PublicCloudDownloader.Tests.csproj -c Release --no-build
 ```
 
-Expected: PASS and a warning-free build.
+Expected: a warning-free build and every existing behavioral test passing.
 
-- [ ] **Step 6: Commit the visual system**
+- [ ] **Step 4: Commit the visual system**
 
 ```powershell
-git add -- src/PublicCloudDownloader.App/App.xaml tests/PublicCloudDownloader.Tests/UI/MainWindowMarkupTests.cs
+git add -- src/PublicCloudDownloader.App/App.xaml
 git commit -m "style: add monochrome WPF control system"
 ```
 
@@ -204,71 +151,13 @@ git commit -m "style: add monochrome WPF control system"
 ### Task 2: Build the compact main window and creator footer
 
 **Files:**
-- Modify: `tests/PublicCloudDownloader.Tests/UI/MainWindowMarkupTests.cs`
 - Modify: `src/PublicCloudDownloader.App/MainWindow.xaml`
-- Test: `tests/PublicCloudDownloader.Tests/UI/MainWindowMarkupTests.cs`
 
 **Interfaces:**
 - Consumes: Task 1 resources; bindings `SourceLink`, `DestinationPath`, `LinkStatus`, `DestinationStatus`, `CanDownload`, and `VersionText`; handlers `Paste_Click`, `Browse_Click`, and `Download_Click`.
 - Produces: approved dimensions, compact monochrome layout, vector icons, and the plain creator footer.
 
-- [ ] **Step 1: Add failing compact-layout contract tests**
-
-Add `using System.Xml.Linq;` and these tests to `MainWindowMarkupTests`:
-
-```csharp
-[Fact]
-public void Main_window_uses_the_approved_compact_dimensions()
-{
-    var document = XDocument.Load(ProjectFile("src", "PublicCloudDownloader.App", "MainWindow.xaml"));
-    var window = Assert.IsType<XElement>(document.Root);
-
-    Assert.Equal("720", (string?)window.Attribute("Width"));
-    Assert.Equal("500", (string?)window.Attribute("Height"));
-    Assert.Equal("650", (string?)window.Attribute("MinWidth"));
-    Assert.Equal("470", (string?)window.Attribute("MinHeight"));
-}
-
-[Fact]
-public void Main_window_contains_the_plain_creator_credit_and_version()
-{
-    var markup = File.ReadAllText(ProjectFile("src", "PublicCloudDownloader.App", "MainWindow.xaml"));
-    Assert.Contains("Text=\"Created by Arkie'z K. Khositkhanawut\"", markup);
-    Assert.Contains("Text=\"{Binding VersionText}\"", markup);
-    Assert.DoesNotContain("<Hyperlink", markup);
-    Assert.DoesNotContain("NavigateUri", markup);
-}
-
-[Fact]
-public void Main_window_preserves_workflow_hooks_and_accessibility_names()
-{
-    var markup = File.ReadAllText(ProjectFile("src", "PublicCloudDownloader.App", "MainWindow.xaml"));
-    Assert.Contains("x:Name=\"SourceLinkBox\"", markup);
-    Assert.Contains("{Binding SourceLink, UpdateSourceTrigger=PropertyChanged}", markup);
-    Assert.Contains("{Binding DestinationPath, UpdateSourceTrigger=PropertyChanged}", markup);
-    Assert.Contains("Text=\"{Binding LinkStatus}\"", markup);
-    Assert.Contains("Text=\"{Binding DestinationStatus}\"", markup);
-    Assert.Contains("IsEnabled=\"{Binding CanDownload}\"", markup);
-    Assert.Contains("Click=\"Paste_Click\"", markup);
-    Assert.Contains("Click=\"Browse_Click\"", markup);
-    Assert.Contains("Click=\"Download_Click\"", markup);
-    Assert.Contains("AutomationProperties.Name=\"Public folder or file link\"", markup);
-    Assert.Contains("AutomationProperties.Name=\"Local destination folder\"", markup);
-    Assert.Contains("AutomationProperties.Name=\"Download\"", markup);
-    Assert.False(markup.Contains("#0369A1", StringComparison.OrdinalIgnoreCase));
-    Assert.False(markup.Contains("#0F172A", StringComparison.OrdinalIgnoreCase));
-}
-```
-
-- [ ] **Step 2: Verify the tests fail against the current 840 x 610 window**
-
-```powershell
-dotnet test tests/PublicCloudDownloader.Tests/PublicCloudDownloader.Tests.csproj -c Release --filter "FullyQualifiedName~MainWindowMarkupTests" --no-restore
-```
-
-Expected: resource test passes; dimension and creator tests fail.
-
-- [ ] **Step 3: Rewrite `MainWindow.xaml` with the approved compact hierarchy**
+- [ ] **Step 1: Rewrite `MainWindow.xaml` with the approved compact hierarchy**
 
 Use this root and row contract:
 
@@ -302,7 +191,7 @@ Implement the three rows exactly as follows:
 - Support strip: margin `0,8,0,0`, padding `10,7`, neutral surface and border, radius `8`, a 16-pixel vector information symbol, wrapping 11.5-point copy `Supports public Google Drive and OneDrive Personal files/folders. Business and SharePoint links aren't supported.`
 - Do not add fixed pixel heights to the form rows; the support copy must wrap at minimum width.
 
-- [ ] **Step 4: Add the exact creator/version footer**
+- [ ] **Step 2: Add the exact creator/version footer**
 
 Use this row-2 markup:
 
@@ -322,19 +211,19 @@ Use this row-2 markup:
 </Border>
 ```
 
-- [ ] **Step 5: Run the markup tests and compile the application**
+- [ ] **Step 3: Compile the application and run existing behavioral tests**
 
 ```powershell
-dotnet test tests/PublicCloudDownloader.Tests/PublicCloudDownloader.Tests.csproj -c Release --filter "FullyQualifiedName~MainWindowMarkupTests" --no-restore
 dotnet build src/PublicCloudDownloader.App/PublicCloudDownloader.App.csproj -c Release --no-restore
+dotnet test tests/PublicCloudDownloader.Tests/PublicCloudDownloader.Tests.csproj -c Release --no-build
 ```
 
-Expected: all markup tests pass and WPF XAML builds with zero warnings and errors.
+Expected: WPF XAML builds with zero warnings and errors and every existing behavioral test passes.
 
-- [ ] **Step 6: Commit the compact main window**
+- [ ] **Step 4: Commit the compact main window**
 
 ```powershell
-git add -- src/PublicCloudDownloader.App/MainWindow.xaml tests/PublicCloudDownloader.Tests/UI/MainWindowMarkupTests.cs
+git add -- src/PublicCloudDownloader.App/MainWindow.xaml
 git commit -m "style: compact the main downloader window"
 ```
 
@@ -347,7 +236,6 @@ git commit -m "style: compact the main downloader window"
 - Verify: `src/PublicCloudDownloader.App/MainWindow.xaml`
 - Verify: `src/PublicCloudDownloader.App/DownloadMonitorWindow.xaml`
 - Verify: `src/PublicCloudDownloader.App/ConflictDialog.xaml`
-- Test: `tests/PublicCloudDownloader.Tests/UI/MainWindowMarkupTests.cs`
 
 **Interfaces:**
 - Consumes: complete UI from Tasks 1 and 2.
