@@ -17,7 +17,7 @@
         <SolidColorBrush x:Key="BorderHoverBrush" Color="#A3A3A3" />
         <SolidColorBrush x:Key="FocusBrush" Color="#171717" />
         <SolidColorBrush x:Key="SuccessBrush" Color="#262626" />
-        <SolidColorBrush x:Key="ErrorBrush" Color="#171717" />
+        <SolidColorBrush x:Key="ErrorBrush" Color="#B42318" />
 
         <Style TargetType="Window">
             <Setter Property="FontFamily" Value="Segoe UI" />

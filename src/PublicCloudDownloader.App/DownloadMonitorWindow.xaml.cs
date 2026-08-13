@@ -6,6 +6,8 @@ using PublicCloudDownloader.Core.Workflow;
 
 namespace PublicCloudDownloader.App;
 
+internal sealed record DownloadActivityEntry(string Text, string Kind);
+
 public partial class DownloadMonitorWindow : Window
 {
     private readonly MainViewModel _viewModel;
@@ -55,17 +57,20 @@ public partial class DownloadMonitorWindow : Window
         ProgressBar.Value = progress.TotalFiles == 0 ? 100 : progress.CompletedFiles * 100d / progress.TotalFiles;
         StatusText.Text = progress.Status;
         CountText.Text = $"{progress.CompletedFiles:N0} of {progress.TotalFiles:N0}";
-        AppendActivity(progress.CurrentRelativePath, progress.Status);
+        if (progress.Status == "Downloaded")
+            AppendActivity(progress.CurrentRelativePath, "Downloaded", "Downloaded");
+        else if (progress.Status == "Skipped existing file")
+            AppendActivity(progress.CurrentRelativePath, "Skipped", "Skipped");
     }
 
-    private void AppendActivity(string? relativePath, string status)
+    private void AppendActivity(string? relativePath, string label, string kind)
     {
         if (string.IsNullOrWhiteSpace(relativePath)) return;
 
-        var eventKey = $"{relativePath}\0{status}";
+        var eventKey = $"{relativePath}\0{kind}";
         if (!_loggedActivities.Add(eventKey)) return;
 
-        var entry = $"{relativePath} — {status}";
+        var entry = new DownloadActivityEntry($"{relativePath} — {label}", kind);
         ActivityList.Items.Add(entry);
         ActivityList.ScrollIntoView(entry);
     }
@@ -86,7 +91,7 @@ public partial class DownloadMonitorWindow : Window
             var failure = result.Failures.FirstOrDefault();
             Heading.Text = "Download could not start";
             StatusText.Text = failure?.Message ?? "The output folder could not be created.";
-            if (failure is not null) AppendActivity(failure.RelativePath, $"Failed: {failure.Message}");
+            if (failure is not null) AppendActivity(failure.RelativePath, $"Failed: {failure.Message}", "Failed");
             FinalMessage = "Download could not start.";
             return;
         }
@@ -96,7 +101,7 @@ public partial class DownloadMonitorWindow : Window
             Heading.Text = "Completed with errors";
             StatusText.Text = $"{result.Downloaded:N0} downloaded, {result.Skipped:N0} skipped, {result.Failures.Count:N0} failed.";
             foreach (var failure in result.Failures)
-                AppendActivity(failure.RelativePath, $"Failed: {failure.Message}");
+                AppendActivity(failure.RelativePath, $"Failed: {failure.Message}", "Failed");
             RetryButton.Visibility = Visibility.Visible;
             FinalMessage = "Download completed with errors.";
         }
