@@ -23,9 +23,11 @@ PublicCloudDownloader-v1.1.2-win-x64.zip
 ```
 
 `SHA256SUMS.txt` and `verification.txt` remain release metadata rather than
-additional application packages. The unpacked `dist/PublicCloudDownloader`
-directory remains an intermediate publish payload used to create and validate
-the ZIP.
+additional application packages. `dist/PublicCloudDownloader` remains the local
+runtime publish directory. Packaging updates its generated application files
+while preserving all existing contents under its `data` and `logs` directories.
+A separate, temporary allowlisted staging directory is used to create the ZIP so
+local runtime data and logs can never enter the distributable package.
 
 The Inno Setup application currently installed in Windows is outside repository
 scope and will not be uninstalled or modified.
@@ -48,21 +50,30 @@ credential cache, account cache, token cache, or an `rclone` executable.
 
 `scripts/package.ps1` performs the following ordered workflow:
 
-1. Resolve and validate repository-local `dist` and `artifacts` paths.
-2. Clear generated contents only within those validated directories.
+1. Resolve and validate repository-local `dist`, publish, artifact, and ZIP
+   staging paths.
+2. Clear the validated artifact directory and replace only generated application
+   entries in the publish directory, preserving the publish directory's existing
+   `data` and `logs` trees byte-for-byte.
 3. Read version `1.1.2` from `Version.props`.
-4. Publish the application as a self-contained, single-file `win-x64` payload.
-5. Add the generated README, product icon, third-party notice, and empty runtime
-   directories.
+4. Publish the application as a self-contained, single-file `win-x64` payload to
+   `dist/PublicCloudDownloader` without clearing its runtime trees.
+5. Update the generated README, product icon, and third-party notice, and create
+   `data` or `logs` only when either directory does not already exist.
 6. Run `PublicCloudDownloader.exe --self-test` from the publish directory and
    fail packaging on a non-zero exit code.
-7. Validate the unpacked publish payload with `scripts/release-test.ps1`.
-8. Create `PublicCloudDownloader-v1.1.2-win-x64.zip`.
-9. Extract the completed ZIP into a uniquely named temporary directory, validate
-   its contents, and run its extracted executable with `--self-test`.
-10. Remove the validated temporary directory.
-11. Confirm no `*-Setup.exe` or other installer artifact was produced.
-12. Write the ZIP SHA-256 to `artifacts/SHA256SUMS.txt` and record build,
+7. Validate the unpacked publish payload while allowing preserved local contents
+   under `data` and `logs`.
+8. Create a uniquely named, validated staging directory; copy only the four
+   approved files into it and create new empty `data` and `logs` directories.
+9. Validate that the staging directory has exactly the approved six root entries
+   and empty runtime directories.
+10. Create `PublicCloudDownloader-v1.1.2-win-x64.zip` from the staging directory.
+11. Extract the completed ZIP into a uniquely named temporary directory, validate
+    its contents, and run its extracted executable with `--self-test`.
+12. Remove both validated temporary directories.
+13. Confirm no `*-Setup.exe` or other installer artifact was produced.
+14. Write the ZIP SHA-256 to `artifacts/SHA256SUMS.txt` and record build,
     payload-validation, and both self-test results in
     `artifacts/verification.txt`.
 
@@ -101,7 +112,10 @@ Active release code and documentation will be made ZIP-only:
   scripts.
 - Update `scripts/version-test.ps1` so canonical-version verification no longer
   depends on an installer definition.
-- Keep `scripts/release-test.ps1` focused on unpacked and ZIP payload validation.
+- Keep `scripts/release-test.ps1` focused on unpacked and ZIP payload validation,
+  with separate contracts for a local runtime payload whose `data` and `logs`
+  may contain preserved files and a distributable payload whose runtime
+  directories must be empty.
 - Update `README.md` and current release requirements to describe only the
   portable ZIP and .NET 8 SDK build requirement.
 - Preserve historical design and implementation documents as records of earlier
@@ -121,9 +135,13 @@ Implementation follows test-first development for observable release behavior:
 5. Run all automated .NET tests.
 6. Run the built application self-test.
 7. Run full packaging and validate the extracted ZIP.
-8. Verify `SHA256SUMS.txt` contains exactly the ZIP filename and its correct
+8. Verify pre-existing sentinel files and their contents under the publish
+   `data` and `logs` trees are unchanged after packaging.
+9. Verify the ZIP contains empty `data` and `logs` directories and none of the
+   preserved local runtime files.
+10. Verify `SHA256SUMS.txt` contains exactly the ZIP filename and its correct
    SHA-256 value.
-9. Verify no Setup EXE exists in the generated artifact directory.
+11. Verify no Setup EXE exists in the generated artifact directory.
 
 ## Error Handling and Safety
 
@@ -131,8 +149,10 @@ Implementation follows test-first development for observable release behavior:
   children of the current repository before removing generated contents.
 - Use a unique child of the system temporary directory for ZIP extraction and
   delete only that validated directory.
-- Preserve existing user download destinations and runtime data outside generated
-  release directories.
+- Preserve existing user download destinations and all runtime data under
+  `dist/PublicCloudDownloader/data` and `dist/PublicCloudDownloader/logs`.
+- Build the ZIP from an explicit allowlist in a new staging directory; never copy
+  the publish directory's runtime trees into that staging directory.
 - Do not install, uninstall, update, or invoke Inno Setup.
 - Do not publish, upload, sign, or externally distribute generated artifacts.
 
@@ -144,8 +164,13 @@ Implementation follows test-first development for observable release behavior:
 - No `*-Setup.exe` is created.
 - The publish-directory and extracted-ZIP self-tests both exit with code `0`.
 - The unpacked and extracted payloads pass release validation.
+- Existing files and contents under the publish directory's `data` and `logs`
+  trees remain unchanged by packaging; transient self-test probe files are
+  deleted before the self-test returns.
 - The ZIP contains the required portable files and runtime directories, including
   `THIRD-PARTY-NOTICES.md`.
+- The ZIP's `data` and `logs` directories are empty and contain none of the local
+  runtime files preserved in the publish directory.
 - `SHA256SUMS.txt` contains one correct entry for the ZIP.
 - `verification.txt` records build, validation, and self-test outcomes.
 - The solution builds with zero warnings and errors and all automated tests pass.
