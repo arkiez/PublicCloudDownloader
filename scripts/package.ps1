@@ -3,42 +3,132 @@ $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $distRoot = [System.IO.Path]::GetFullPath((Join-Path $repoRoot 'dist'))
 $publishDir = [System.IO.Path]::GetFullPath((Join-Path $distRoot 'PublicCloudDownloader'))
 $artifacts = [System.IO.Path]::GetFullPath((Join-Path $repoRoot 'artifacts'))
+$stagingDir = $null
 
 function Assert-RepositoryChild([string]$path) {
     $resolved = [System.IO.Path]::GetFullPath($path)
-    $prefix = $repoRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
-    if (-not $resolved.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) { throw "Unsafe build path: $resolved" }
+    $prefix = $repoRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+    if (-not $resolved.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Unsafe build path: $resolved"
+    }
 }
+
+function Assert-RuntimeDirectory([string]$path) {
+    if (Test-Path -LiteralPath $path -PathType Leaf) {
+        throw "Runtime path must be a directory: $path"
+    }
+    New-Item -ItemType Directory -Path $path -Force | Out-Null
+}
+
+function Remove-PublishGeneratedEntries([string]$path) {
+    if (-not (Test-Path -LiteralPath $path -PathType Container)) { return }
+    Get-ChildItem -LiteralPath $path -Force |
+        Where-Object { $_.Name -notin @('data', 'logs') } |
+        Remove-Item -Recurse -Force
+}
+
+function Copy-DistributionPayload([string]$source, [string]$destination) {
+    New-Item -ItemType Directory -Path $destination -Force | Out-Null
+    foreach ($name in @('PublicCloudDownloader.exe', 'PublicCloudDownloader.ico', 'README.txt', 'THIRD-PARTY-NOTICES.md')) {
+        Copy-Item -LiteralPath (Join-Path $source $name) -Destination (Join-Path $destination $name)
+    }
+    New-Item -ItemType Directory -Path (Join-Path $destination 'data'), (Join-Path $destination 'logs') -Force | Out-Null
+}
+
+function Assert-ArtifactSet([string]$root, [string[]]$expectedNames) {
+    $actualNames = @(Get-ChildItem -LiteralPath $root -Force | ForEach-Object Name | Sort-Object)
+    $sortedExpected = @($expectedNames | Sort-Object)
+    if (Compare-Object $sortedExpected $actualNames) {
+        throw 'Artifact directory contains unexpected entries.'
+    }
+}
+
 Assert-RepositoryChild $distRoot
+Assert-RepositoryChild $publishDir
 Assert-RepositoryChild $artifacts
-foreach ($path in @($distRoot, $artifacts)) { if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Recurse -Force } }
-New-Item -ItemType Directory -Path $publishDir, $artifacts -Force | Out-Null
+foreach ($path in @($distRoot, $publishDir, $artifacts)) {
+    if (Test-Path -LiteralPath $path -PathType Leaf) {
+        throw "Build path must be a directory: $path"
+    }
+    New-Item -ItemType Directory -Path $path -Force | Out-Null
+}
 
-[xml]$versionXml = Get-Content (Join-Path $repoRoot 'Version.props')
-$version = [string]$versionXml.Project.PropertyGroup.Version
-& (Join-Path $PSScriptRoot 'version-test.ps1')
+try {
+    Get-ChildItem -LiteralPath $artifacts -Force | Remove-Item -Recurse -Force
+    Remove-PublishGeneratedEntries $publishDir
+    Assert-RuntimeDirectory (Join-Path $publishDir 'data')
+    Assert-RuntimeDirectory (Join-Path $publishDir 'logs')
 
-dotnet publish (Join-Path $repoRoot 'src\PublicCloudDownloader.App\PublicCloudDownloader.App.csproj') --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -o $publishDir
-if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
+    [xml]$versionXml = Get-Content (Join-Path $repoRoot 'Version.props')
+    $version = [string]$versionXml.Project.PropertyGroup.Version
+    & (Join-Path $PSScriptRoot 'version-test.ps1') -ExpectedVersion $version
+    if ($LASTEXITCODE -ne 0) { throw "Version test failed with exit code $LASTEXITCODE." }
 
-$guide = (Get-Content (Join-Path $repoRoot 'docs\PublicCloudDownloader-README.txt') -Raw).Replace('{{VERSION}}', $version)
-Set-Content -LiteralPath (Join-Path $publishDir 'README.txt') -Value $guide -Encoding utf8
-Copy-Item -LiteralPath (Join-Path $repoRoot 'src\PublicCloudDownloader.App\Assets\PublicCloudDownloader.ico') -Destination (Join-Path $publishDir 'PublicCloudDownloader.ico')
-New-Item -ItemType Directory -Path (Join-Path $publishDir 'data'), (Join-Path $publishDir 'logs') -Force | Out-Null
-$selfTest = Start-Process -FilePath (Join-Path $publishDir 'PublicCloudDownloader.exe') -ArgumentList '--self-test' -Wait -PassThru -WindowStyle Hidden
-if ($selfTest.ExitCode -ne 0) { throw "Published self-test failed with exit code $($selfTest.ExitCode)." }
-& (Join-Path $PSScriptRoot 'release-test.ps1') -ReleaseDirectory $publishDir
+    dotnet publish (Join-Path $repoRoot 'src\PublicCloudDownloader.App\PublicCloudDownloader.App.csproj') --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -o $publishDir
+    if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
 
-$zipPath = Join-Path $artifacts "PublicCloudDownloader-v$version-win-x64.zip"
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-[System.IO.Compression.ZipFile]::CreateFromDirectory($publishDir, $zipPath, [System.IO.Compression.CompressionLevel]::Optimal, $false)
+    $guide = (Get-Content (Join-Path $repoRoot 'docs\PublicCloudDownloader-README.txt') -Raw).Replace('{{VERSION}}', $version)
+    Set-Content -LiteralPath (Join-Path $publishDir 'README.txt') -Value $guide -Encoding utf8
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'src\PublicCloudDownloader.App\Assets\PublicCloudDownloader.ico') -Destination (Join-Path $publishDir 'PublicCloudDownloader.ico')
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'THIRD-PARTY-NOTICES.md') -Destination (Join-Path $publishDir 'THIRD-PARTY-NOTICES.md')
+    Assert-RuntimeDirectory (Join-Path $publishDir 'data')
+    Assert-RuntimeDirectory (Join-Path $publishDir 'logs')
 
-$iscc = (& (Join-Path $PSScriptRoot 'install-build-tools.ps1') | Select-Object -Last 1).Trim()
-& $iscc "/DAppVersion=$version" "/DPublishDir=$publishDir" "/DOutputDir=$artifacts" (Join-Path $repoRoot 'installer\PublicCloudDownloader.iss')
-if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed with exit code $LASTEXITCODE." }
+    $selfTest = Start-Process -FilePath (Join-Path $publishDir 'PublicCloudDownloader.exe') -ArgumentList '--self-test' -Wait -PassThru -WindowStyle Hidden
+    if ($selfTest.ExitCode -ne 0) { throw "Published self-test failed with exit code $($selfTest.ExitCode)." }
 
-$installerPath = Join-Path $artifacts "PublicCloudDownloader-v$version-Setup.exe"
-foreach ($required in @($zipPath, $installerPath)) { if (-not (Test-Path -LiteralPath $required -PathType Leaf)) { throw "Expected artifact was not created: $required" } }
-$hashLines = foreach ($file in @($installerPath, $zipPath)) { $hash = Get-FileHash -LiteralPath $file -Algorithm SHA256; "$($hash.Hash.ToLowerInvariant())  $([System.IO.Path]::GetFileName($file))" }
-Set-Content -LiteralPath (Join-Path $artifacts 'SHA256SUMS.txt') -Value $hashLines -Encoding ascii
-Write-Output "Created release artifacts for $version in $artifacts"
+    & (Join-Path $PSScriptRoot 'release-test.ps1') -ReleaseDirectory $publishDir -AllowRuntimeData
+    if ($LASTEXITCODE -ne 0) { throw "Published payload validation failed with exit code $LASTEXITCODE." }
+
+    do {
+        $stagingDir = Join-Path $distRoot ('.zip-staging-' + [Guid]::NewGuid().ToString('N'))
+    } while (Test-Path -LiteralPath $stagingDir)
+    Assert-RepositoryChild $stagingDir
+    Copy-DistributionPayload $publishDir $stagingDir
+
+    & (Join-Path $PSScriptRoot 'release-test.ps1') -ReleaseDirectory $stagingDir
+    if ($LASTEXITCODE -ne 0) { throw "ZIP staging payload validation failed with exit code $LASTEXITCODE." }
+
+    $zipName = "PublicCloudDownloader-v$version-win-x64.zip"
+    $zipPath = Join-Path $artifacts $zipName
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($stagingDir, $zipPath, [System.IO.Compression.CompressionLevel]::Optimal, $false)
+    if (-not (Test-Path -LiteralPath $zipPath -PathType Leaf)) { throw "Expected ZIP was not created: $zipPath" }
+
+    & (Join-Path $PSScriptRoot 'release-test.ps1') -ZipPath $zipPath
+    if ($LASTEXITCODE -ne 0) { throw "Extracted ZIP validation failed with exit code $LASTEXITCODE." }
+
+    Assert-ArtifactSet $artifacts @($zipName)
+    $zipHash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $checksumLine = "$zipHash  $zipName"
+    Set-Content -LiteralPath (Join-Path $artifacts 'SHA256SUMS.txt') -Value $checksumLine -Encoding ascii
+
+    @(
+        "Version: $version"
+        'Publish build: PASS'
+        'Published self-test: PASS (exit code 0)'
+        'Published payload validation: PASS'
+        'ZIP creation: PASS'
+        'Extracted ZIP payload validation: PASS'
+        'Extracted ZIP self-test: PASS (exit code 0)'
+        'Artifact-set validation: PASS'
+        "SHA-256: $checksumLine"
+    ) | Set-Content -LiteralPath (Join-Path $artifacts 'verification.txt') -Encoding ascii
+
+    Write-Output "Created ZIP release artifacts for $version in $artifacts"
+} finally {
+    if ($stagingDir) {
+        $resolvedStaging = [System.IO.Path]::GetFullPath($stagingDir)
+        $resolvedDist = [System.IO.Path]::GetFullPath($distRoot)
+        $distNormalized = $resolvedDist.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+        $parent = [System.IO.Path]::GetFullPath([System.IO.Path]::GetDirectoryName($resolvedStaging))
+        $parentNormalized = $parent.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+        $basename = [System.IO.Path]::GetFileName($resolvedStaging)
+        if ($parentNormalized -ine $distNormalized -or $basename -notmatch '^\.zip-staging-[0-9a-f]{32}$') {
+            throw "Refused unsafe staging cleanup path: $resolvedStaging"
+        }
+        if (Test-Path -LiteralPath $resolvedStaging) {
+            Remove-Item -LiteralPath $resolvedStaging -Recurse -Force
+        }
+    }
+}

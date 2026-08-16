@@ -23,8 +23,8 @@ foreach ($file in $production) {
 }
 $guide = Get-Content (Join-Path $repoRoot 'docs\PublicCloudDownloader-README.txt') -Raw
 if ($guide -notmatch '\{\{VERSION\}\}') { throw 'Packaged guide must use {{VERSION}}.' }
-$installer = Get-Content (Join-Path $repoRoot 'installer\PublicCloudDownloader.iss') -Raw
-if ($installer -notmatch '#ifndef AppVersion') { throw 'Installer must require AppVersion.' }
 $package = Get-Content (Join-Path $repoRoot 'scripts\package.ps1') -Raw
-if ($package -notmatch 'Version.props' -or $package -notmatch 'DAppVersion') { throw 'Packaging must derive and pass the canonical version.' }
+if ($package -notmatch 'Version\.props' -or $package -notmatch '\$version-win-x64\.zip') {
+    throw 'Packaging must derive the versioned ZIP filename from Version.props.'
+}
 Write-Output "Version test passed: $version"
