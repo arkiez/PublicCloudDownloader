@@ -21,16 +21,10 @@
                 </Grid.ColumnDefinitions>
                 <Border Width="40" Height="40" CornerRadius="8" Background="{StaticResource PrimaryBrush}"
                         VerticalAlignment="Center">
-                    <Viewbox Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Canvas Width="24" Height="24">
-                            <Path Stroke="{StaticResource SurfaceBrush}" StrokeThickness="1.8"
-                                  StrokeLineJoin="Round"
-                                  Data="M6.5,18.5 C3.5,18.5 1.5,16.5 1.5,13.8 C1.5,11.2 3.3,9.1 5.8,8.7 C6.7,5.8 9.3,3.7 12.5,3.7 C16.4,3.7 19.5,6.6 19.9,10.4 C22.1,10.8 23.8,12.7 23.8,15 C23.8,17 22.1,18.5 20,18.5" />
-                            <Path Stroke="{StaticResource SurfaceBrush}" StrokeThickness="1.8"
-                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                                  Data="M12.5,10 L12.5,20 M9.2,16.7 L12.5,20 L15.8,16.7" />
-                        </Canvas>
-                    </Viewbox>
+                    <ContentControl Content="{StaticResource OcticonCloud24}"
+                                    Foreground="{StaticResource SurfaceBrush}"
+                                    Style="{StaticResource Octicon24}"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="Public Cloud Downloader" FontSize="20" FontWeight="SemiBold" />
@@ -68,7 +62,7 @@
                                  AutomationProperties.Name="Public folder or file link"
                                  ToolTip="Paste a public Google Drive or OneDrive Personal link" />
                         <Button HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,6,0"
-                                Panel.ZIndex="1" Content="×" Click="ClearSourceLink_Click"
+                                Panel.ZIndex="1" Click="ClearSourceLink_Click"
                                 ToolTip="Clear link" AutomationProperties.Name="Clear public link">
                             <Button.Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource InputClearButton}">
@@ -80,18 +74,18 @@
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
+                            <ContentControl Content="{StaticResource OcticonX16}"
+                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                            Style="{StaticResource Octicon16}" />
                         </Button>
                     </Grid>
                     <Button Grid.Column="1" Width="94" MinHeight="44" Margin="10,0,0,0"
                             Style="{StaticResource SecondaryButton}" Click="Paste_Click"
                             AutomationProperties.Name="Paste link">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Viewbox Width="16" Height="16" Margin="0,0,7,0">
-                                <Canvas Width="16" Height="16">
-                                    <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                          Data="M5,1 L12,1 L14,3 L14,14 L5,14 Z M7,3 L7,0 L13,0 L15,2 L15,12 L13,12 L13,3 Z M7,5 L12,5 L12,6 L7,6 Z M7,8 L12,8 L12,9 L7,9 Z M7,11 L10,11 L10,12 L7,12 Z" />
-                                </Canvas>
-                            </Viewbox>
+                            <ContentControl Content="{StaticResource OcticonPaste16}" Margin="0,0,7,0"
+                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                            Style="{StaticResource Octicon16}" />
                             <TextBlock Text="Paste" />
                         </StackPanel>
                     </Button>
@@ -112,7 +106,7 @@
                                  Text="{Binding DestinationPath, UpdateSourceTrigger=PropertyChanged}"
                                  AutomationProperties.Name="Local destination folder" />
                         <Button HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,6,0"
-                                Panel.ZIndex="1" Content="×" Click="ClearDestinationPath_Click"
+                                Panel.ZIndex="1" Click="ClearDestinationPath_Click"
                                 ToolTip="Clear destination" AutomationProperties.Name="Clear destination folder">
                             <Button.Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource InputClearButton}">
@@ -124,18 +118,18 @@
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
+                            <ContentControl Content="{StaticResource OcticonX16}"
+                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                            Style="{StaticResource Octicon16}" />
                         </Button>
                     </Grid>
                     <Button Grid.Column="1" Width="94" MinHeight="44" Margin="10,0,0,0"
                             Style="{StaticResource SecondaryButton}" Click="Browse_Click"
                             AutomationProperties.Name="Browse destination">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Viewbox Width="16" Height="16" Margin="0,0,7,0">
-                                <Canvas Width="16" Height="16">
-                                    <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                          Data="M1,3 L6.3,3 L8,5 L15,5 L15,14 L1,14 Z M2.5,6.5 L13.5,6.5 L13.5,12.5 L2.5,12.5 Z" />
-                                </Canvas>
-                            </Viewbox>
+                            <ContentControl Content="{StaticResource OcticonFileDirectory24}" Margin="0,0,7,0"
+                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                            Style="{StaticResource Octicon16From24}" />
                             <TextBlock Text="Browse" />
                         </StackPanel>
                     </Button>
@@ -164,18 +158,18 @@
                                 AutomationProperties.HelpText="Supports public Google Drive and OneDrive Personal files/folders. Business and SharePoint links aren't supported.">
                             <ToggleButton.ToolTip>
                                 <ToolTip MaxWidth="360">
-                                    <TextBlock TextWrapping="Wrap"
-                                               Text="Supports public Google Drive and OneDrive Personal files/folders. Business and SharePoint links aren't supported." />
+                                    <StackPanel Orientation="Horizontal">
+                                        <ContentControl Content="{StaticResource OcticonInfo16}" Margin="0,1,8,0"
+                                                        Foreground="{StaticResource TextBrush}"
+                                                        Style="{StaticResource Octicon16}" />
+                                        <TextBlock Width="320" TextWrapping="Wrap"
+                                                   Text="Supports public Google Drive and OneDrive Personal files/folders. Business and SharePoint links aren't supported." />
+                                    </StackPanel>
                                 </ToolTip>
                             </ToggleButton.ToolTip>
-                            <Viewbox Width="16" Height="16">
-                                <Canvas Width="16" Height="16">
-                                    <Ellipse Width="14" Height="14" Canvas.Left="1" Canvas.Top="1"
-                                             Stroke="{StaticResource TextBrush}" StrokeThickness="1.5" />
-                                    <Path Stroke="{StaticResource TextBrush}" StrokeThickness="1.5"
-                                          StrokeStartLineCap="Round" Data="M8,7 L8,11 M8,4.5 L8,5" />
-                                </Canvas>
-                            </Viewbox>
+                            <ContentControl Content="{StaticResource OcticonInfo16}"
+                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"
+                                            Style="{StaticResource Octicon16}" />
                         </ToggleButton>
                         <Popup PlacementTarget="{Binding ElementName=SupportedServicesToggle}" Placement="Bottom"
                                IsOpen="{Binding IsChecked, ElementName=SupportedServicesToggle, Mode=TwoWay}"
@@ -183,21 +177,23 @@
                             <Border Width="360" Margin="0,6,0,0" Padding="12,10" CornerRadius="8"
                                     Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}"
                                     BorderThickness="1" Focusable="False">
-                                <TextBlock TextWrapping="Wrap" Foreground="{StaticResource SecondaryTextBrush}"
-                                           Focusable="False"
-                                           Text="Supports public Google Drive and OneDrive Personal files/folders. Business and SharePoint links aren't supported." />
+                                <StackPanel Orientation="Horizontal">
+                                    <ContentControl Content="{StaticResource OcticonInfo16}" Margin="0,1,8,0"
+                                                    Foreground="{StaticResource SecondaryTextBrush}"
+                                                    Style="{StaticResource Octicon16}" />
+                                    <TextBlock Width="310" TextWrapping="Wrap" Foreground="{StaticResource SecondaryTextBrush}"
+                                               Focusable="False"
+                                               Text="Supports public Google Drive and OneDrive Personal files/folders. Business and SharePoint links aren't supported." />
+                                </StackPanel>
                             </Border>
                         </Popup>
                         <Button MinWidth="142" MinHeight="44" Style="{StaticResource PrimaryButton}"
                                 IsEnabled="{Binding CanDownload}" Click="Download_Click" IsDefault="True"
                                 AutomationProperties.Name="Download">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Viewbox Width="16" Height="16" Margin="0,0,7,0">
-                                    <Canvas Width="16" Height="16">
-                                        <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                              Data="M7.25,1 L8.75,1 L8.75,9.2 L11.5,6.45 L12.56,7.51 L8,12.07 L3.44,7.51 L4.5,6.45 L7.25,9.2 Z M2,13 L14,13 L14,15 L2,15 Z" />
-                                    </Canvas>
-                                </Viewbox>
+                                <ContentControl Content="{StaticResource OcticonDownload16}" Margin="0,0,7,0"
+                                                Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                Style="{StaticResource Octicon16}" />
                                 <TextBlock Text="Download" />
                             </StackPanel>
                         </Button>
