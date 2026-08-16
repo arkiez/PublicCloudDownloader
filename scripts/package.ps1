@@ -35,6 +35,45 @@ function Copy-DistributionPayload([string]$source, [string]$destination) {
     New-Item -ItemType Directory -Path (Join-Path $destination 'data'), (Join-Path $destination 'logs') -Force | Out-Null
 }
 
+function Write-DistributionZip([string]$source, [string]$destination) {
+    Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $stream = [System.IO.File]::Open(
+        $destination,
+        [System.IO.FileMode]::CreateNew,
+        [System.IO.FileAccess]::ReadWrite,
+        [System.IO.FileShare]::None)
+    try {
+        $archive = [System.IO.Compression.ZipArchive]::new(
+            $stream,
+            [System.IO.Compression.ZipArchiveMode]::Create,
+            $false)
+        try {
+            foreach ($name in @('PublicCloudDownloader.exe', 'PublicCloudDownloader.ico', 'README.txt', 'THIRD-PARTY-NOTICES.md')) {
+                $entry = $archive.CreateEntry($name, [System.IO.Compression.CompressionLevel]::Optimal)
+                $sourceStream = [System.IO.File]::OpenRead((Join-Path $source $name))
+                try {
+                    $entryStream = $entry.Open()
+                    try {
+                        $sourceStream.CopyTo($entryStream)
+                    } finally {
+                        $entryStream.Dispose()
+                    }
+                } finally {
+                    $sourceStream.Dispose()
+                }
+            }
+            foreach ($name in @('data/', 'logs/')) {
+                $archive.CreateEntry($name) | Out-Null
+            }
+        } finally {
+            $archive.Dispose()
+        }
+    } finally {
+        $stream.Dispose()
+    }
+}
+
 function Assert-ArtifactSet([string]$root, [string[]]$expectedNames) {
     $actualNames = @(Get-ChildItem -LiteralPath $root -Force | ForEach-Object Name | Sort-Object)
     $sortedExpected = @($expectedNames | Sort-Object)
@@ -88,8 +127,7 @@ try {
 
     $zipName = "PublicCloudDownloader-v$version-win-x64.zip"
     $zipPath = Join-Path $artifacts $zipName
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-    [System.IO.Compression.ZipFile]::CreateFromDirectory($stagingDir, $zipPath, [System.IO.Compression.CompressionLevel]::Optimal, $false)
+    Write-DistributionZip $stagingDir $zipPath
     if (-not (Test-Path -LiteralPath $zipPath -PathType Leaf)) { throw "Expected ZIP was not created: $zipPath" }
 
     & (Join-Path $PSScriptRoot 'release-test.ps1') -ZipPath $zipPath

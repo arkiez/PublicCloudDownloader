@@ -78,6 +78,26 @@ if ($ArtifactsDirectory) {
 
         $zipPath = Join-Path $artifactRoot $zipName
         if (Test-Path -LiteralPath $zipPath -PathType Leaf) {
+            Add-Type -AssemblyName System.IO.Compression
+            Add-Type -AssemblyName System.IO.Compression.FileSystem
+            $zip = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
+            try {
+                $expectedZipEntries = @(
+                    'PublicCloudDownloader.exe'
+                    'PublicCloudDownloader.ico'
+                    'README.txt'
+                    'THIRD-PARTY-NOTICES.md'
+                    'data/'
+                    'logs/'
+                ) | Sort-Object
+                $actualZipEntries = @($zip.Entries | ForEach-Object FullName | Sort-Object)
+                if (Compare-Object $expectedZipEntries $actualZipEntries) {
+                    Add-Failure 'ZIP entry set must contain exactly the six standard forward-slash names.'
+                }
+            } finally {
+                $zip.Dispose()
+            }
+
             $zipHash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
             $checksumPath = Join-Path $artifactRoot 'SHA256SUMS.txt'
             $lines = @()
