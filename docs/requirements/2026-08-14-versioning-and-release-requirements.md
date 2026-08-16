@@ -64,7 +64,7 @@ Before handoff, run and record successful results for:
 ./scripts/version-test.ps1 -ExpectedVersion <version>
 dotnet build src/PublicCloudDownloader.App/PublicCloudDownloader.App.csproj -c Release
 dotnet test PublicCloudDownloader.sln -c Release
-./scripts/release-test.ps1 -ReleaseDirectory <dist-path>
+./scripts/release-test.ps1 -ReleaseDirectory <dist-path> -AllowRuntimeData
 ```
 
 The published executable and the executable extracted from the finished ZIP

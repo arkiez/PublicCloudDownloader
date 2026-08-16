@@ -60,6 +60,10 @@ foreach ($requiredPattern in @('Version\.props', '-win-x64\.zip', 'SHA256SUMS\.t
         Add-Failure "package.ps1 is missing required pattern: $requiredPattern"
     }
 }
+$stalePowerShellExitPattern = '(?ms)&\s*\(Join-Path[^\r\n]*(version-test|release-test)\.ps1[^\r\n]*\)\s*[^\r\n]*\r?\n\s*if\s*\(\s*\$LASTEXITCODE'
+if ($package -match $stalePowerShellExitPattern) {
+    Add-Failure 'package.ps1 must not gate PowerShell script invocations on stale $LASTEXITCODE.'
+}
 
 if ($ArtifactsDirectory) {
     $artifactRoot = [System.IO.Path]::GetFullPath($ArtifactsDirectory)
@@ -74,35 +78,49 @@ if ($ArtifactsDirectory) {
 
         $zipPath = Join-Path $artifactRoot $zipName
         if (Test-Path -LiteralPath $zipPath -PathType Leaf) {
-            $hash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+            $zipHash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
             $checksumPath = Join-Path $artifactRoot 'SHA256SUMS.txt'
-            $lines = if (Test-Path -LiteralPath $checksumPath) {
-                @(Get-Content -LiteralPath $checksumPath | Where-Object { $_ })
-            } else { @() }
-            $expectedLine = "$hash  $zipName"
+            $lines = @()
+            if (Test-Path -LiteralPath $checksumPath -PathType Leaf) {
+                $lines = @(Get-Content -LiteralPath $checksumPath | Where-Object { $_ })
+            }
+            $expectedLine = "$zipHash  $zipName"
             if ($lines.Count -ne 1 -or $lines[0] -cne $expectedLine) {
                 Add-Failure 'SHA256SUMS.txt must contain one exact lowercase ZIP checksum.'
             }
         }
 
         $verificationPath = Join-Path $artifactRoot 'verification.txt'
-        $verification = if (Test-Path -LiteralPath $verificationPath) {
-            Get-Content -LiteralPath $verificationPath -Raw
-        } else { '' }
-        foreach ($label in @(
-            'Version: 1.1.2',
-            'Publish build: PASS',
-            'Published self-test: PASS (exit code 0)',
-            'Published payload validation: PASS',
-            'ZIP creation: PASS',
-            'Extracted ZIP payload validation: PASS',
-            'Extracted ZIP self-test: PASS (exit code 0)',
-            'Artifact-set validation: PASS',
-            'SHA-256:'
-        )) {
-            if ($verification -notmatch [regex]::Escape($label)) {
-                Add-Failure "verification.txt is missing: $label"
+        $verificationLines = @()
+        if (Test-Path -LiteralPath $verificationPath -PathType Leaf) {
+            $verificationLines = @(Get-Content -LiteralPath $verificationPath)
+        }
+        if (Test-Path -LiteralPath $zipPath -PathType Leaf) {
+            $expectedVerificationLines = @(
+                "Version: $version"
+                'Publish build: PASS'
+                'Published self-test: PASS (exit code 0)'
+                'Published payload validation: PASS'
+                'ZIP creation: PASS'
+                'Extracted ZIP payload validation: PASS'
+                'Extracted ZIP self-test: PASS (exit code 0)'
+                'Artifact-set validation: PASS'
+                "SHA-256: $zipHash  $zipName"
+            )
+            $verificationMatches = $verificationLines.Count -eq $expectedVerificationLines.Count
+            if ($verificationMatches) {
+                for ($index = 0; $index -lt $expectedVerificationLines.Count; $index++) {
+                    if ($verificationLines[$index] -cne $expectedVerificationLines[$index]) {
+                        $verificationMatches = $false
+                        break
+                    }
+                }
             }
+            if (-not $verificationMatches) {
+                Add-Failure 'verification.txt must contain the exact ordered release lines, including the ZIP hash and filename.'
+            }
+        } elseif ($verificationLines.Count -eq 0) {
+            Add-Failure 'verification.txt is missing.'
         }
     }
 }

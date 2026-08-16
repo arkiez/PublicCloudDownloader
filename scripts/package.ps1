@@ -62,7 +62,6 @@ try {
     [xml]$versionXml = Get-Content (Join-Path $repoRoot 'Version.props')
     $version = [string]$versionXml.Project.PropertyGroup.Version
     & (Join-Path $PSScriptRoot 'version-test.ps1') -ExpectedVersion $version
-    if ($LASTEXITCODE -ne 0) { throw "Version test failed with exit code $LASTEXITCODE." }
 
     dotnet publish (Join-Path $repoRoot 'src\PublicCloudDownloader.App\PublicCloudDownloader.App.csproj') --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -o $publishDir
     if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
@@ -78,7 +77,6 @@ try {
     if ($selfTest.ExitCode -ne 0) { throw "Published self-test failed with exit code $($selfTest.ExitCode)." }
 
     & (Join-Path $PSScriptRoot 'release-test.ps1') -ReleaseDirectory $publishDir -AllowRuntimeData
-    if ($LASTEXITCODE -ne 0) { throw "Published payload validation failed with exit code $LASTEXITCODE." }
 
     do {
         $stagingDir = Join-Path $distRoot ('.zip-staging-' + [Guid]::NewGuid().ToString('N'))
@@ -87,7 +85,6 @@ try {
     Copy-DistributionPayload $publishDir $stagingDir
 
     & (Join-Path $PSScriptRoot 'release-test.ps1') -ReleaseDirectory $stagingDir
-    if ($LASTEXITCODE -ne 0) { throw "ZIP staging payload validation failed with exit code $LASTEXITCODE." }
 
     $zipName = "PublicCloudDownloader-v$version-win-x64.zip"
     $zipPath = Join-Path $artifacts $zipName
@@ -96,7 +93,6 @@ try {
     if (-not (Test-Path -LiteralPath $zipPath -PathType Leaf)) { throw "Expected ZIP was not created: $zipPath" }
 
     & (Join-Path $PSScriptRoot 'release-test.ps1') -ZipPath $zipPath
-    if ($LASTEXITCODE -ne 0) { throw "Extracted ZIP validation failed with exit code $LASTEXITCODE." }
 
     Assert-ArtifactSet $artifacts @($zipName)
     $zipHash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
