@@ -82,6 +82,60 @@ public sealed class DownloadCoordinatorTests
             => base.ReadAsync(buffer[..Math.Min(buffer.Length, chunkSize)], cancellationToken);
     }
 
+    [Fact]
+    public async Task Progress_reports_three_active_downloads_with_individual_status()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "pcd-active-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(root);
+        try
+        {
+            var items = Enumerable.Range(1, 4).Select(i =>
+            {
+                var name = $"file{i}.bin";
+                var source = new ManifestItem(i.ToString(), name, ManifestItemKind.File, 10, DownloadVariant.Binary);
+                return new PlannedItem(source, Path.Combine(root, name), name);
+            }).ToArray();
+            var plan = new DownloadPlan(root, root, items);
+            var reports = new System.Collections.Concurrent.ConcurrentQueue<DownloadProgress>();
+            var provider = new GatedProvider("0123456789");
+            var run = new DownloadCoordinator(new SafeFileWriter(), new ImmediateDelay()).RunAsync(
+                provider, plan, ExistingFilePolicy.Skip, Guid.NewGuid(), [], new InlineProgress<DownloadProgress>(reports.Enqueue), default);
+
+            await provider.ThreeStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            Assert.Contains(reports, x => x.ActiveDownloads.Count == 3 && x.ActiveDownloads.All(y => y.Status == "Downloading"));
+            Assert.All(reports, x => Assert.InRange(x.ActiveDownloads.Count, 0, 3));
+
+            provider.Release();
+            await run;
+            Assert.Empty(reports.Last().ActiveDownloads);
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    private sealed class GatedProvider(string content) : IPublicCloudProvider
+    {
+        private int _started;
+        private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource ThreeStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public ProviderKind Kind => ProviderKind.GoogleDrive;
+        public Task<PublicManifest> BuildManifestAsync(ParsedCloudLink link, IProgress<ManifestProgress>? progress, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<DownloadLease> OpenDownloadAsync(ManifestItem item, CancellationToken cancellationToken)
+        {
+            if (Interlocked.Increment(ref _started) == 3) ThreeStarted.TrySetResult();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(content);
+            return Task.FromResult(new DownloadLease(new GatedStream(bytes, _release.Task), bytes.Length, "application/octet-stream"));
+        }
+        public void Release() => _release.TrySetResult();
+    }
+
+    private sealed class GatedStream(byte[] bytes, Task release) : MemoryStream(bytes)
+    {
+        private bool _released;
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            if (!_released) { await release.WaitAsync(cancellationToken); _released = true; }
+            return await base.ReadAsync(buffer, cancellationToken);
+        }
+    }
     private sealed class BytesProvider(string content) : IPublicCloudProvider
     {
         public int OpenCount { get; private set; }

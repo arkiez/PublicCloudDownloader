@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using PublicCloudDownloader.App.ViewModels;
 using PublicCloudDownloader.Core.Downloads;
@@ -7,6 +8,7 @@ using PublicCloudDownloader.Core.Workflow;
 namespace PublicCloudDownloader.App;
 
 internal sealed record DownloadActivityEntry(string Text, string Kind);
+internal sealed record ActiveDownloadDisplay(string FileName, string RelativePath, string StatusText);
 
 public partial class DownloadMonitorWindow : Window
 {
@@ -60,10 +62,18 @@ public partial class DownloadMonitorWindow : Window
         ProgressBar.Value = progress.PercentComplete;
         StatusText.Text = progress.Status;
         CountText.Text = $"{progress.CompletedFiles:N0} of {progress.TotalFiles:N0} - {progress.PercentComplete:0}%";
+        ActiveDownloadsList.ItemsSource = progress.ActiveDownloads.Select(ToDisplay).ToArray();
         if (progress.Status == "Downloaded")
             AppendActivity(progress.CurrentRelativePath, "Downloaded", "Downloaded");
         else if (progress.Status == "Skipped existing file")
             AppendActivity(progress.CurrentRelativePath, "Skipped", "Skipped");
+    }
+
+    private static ActiveDownloadDisplay ToDisplay(ActiveDownloadProgress item)
+    {
+        var fileName = Path.GetFileName(item.RelativePath);
+        var status = item.PercentComplete.HasValue ? $"{item.Status} {item.PercentComplete.Value:0}%" : item.Status;
+        return new(fileName, item.RelativePath, status);
     }
 
     private void AppendActivity(string? relativePath, string label, string kind)

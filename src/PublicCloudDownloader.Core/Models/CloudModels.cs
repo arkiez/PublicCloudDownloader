@@ -40,6 +40,13 @@ public sealed record FileCollision(PlannedItem Item, long ExistingLength);
 
 public sealed record ManifestProgress(int ItemsDiscovered, string? CurrentPath);
 
+public sealed record ActiveDownloadProgress(
+    string RelativePath,
+    long TransferredBytes,
+    long? TotalBytes,
+    double? PercentComplete,
+    string Status);
+
 public sealed record DownloadProgress(
     int CompletedFiles,
     int TotalFiles,
@@ -48,4 +55,7 @@ public sealed record DownloadProgress(
     string? CurrentRelativePath,
     int FailedFiles,
     string Status,
-    double PercentComplete = 0);
+    double PercentComplete = 0)
+{
+    public IReadOnlyList<ActiveDownloadProgress> ActiveDownloads { get; init; } = [];
+}
