@@ -47,4 +47,5 @@ public sealed record DownloadProgress(
     long? KnownTotalBytes,
     string? CurrentRelativePath,
     int FailedFiles,
-    string Status);
+    string Status,
+    double PercentComplete = 0);

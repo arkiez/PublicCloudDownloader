@@ -42,6 +42,46 @@ public sealed class DownloadCoordinatorTests
         finally { Directory.Delete(root, true); }
     }
 
+    [Fact]
+    public async Task Progress_reports_intermediate_percentage_while_a_file_is_streaming()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "pcd-progress-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(root);
+        try
+        {
+            var target = Path.Combine(root, "file.bin");
+            var source = new ManifestItem("1", "file.bin", ManifestItemKind.File, 10, DownloadVariant.Binary);
+            var plan = new DownloadPlan(root, root, new[] { new PlannedItem(source, target, "file.bin") });
+            var reports = new List<DownloadProgress>();
+            var progress = new InlineProgress<DownloadProgress>(reports.Add);
+            await new DownloadCoordinator(new SafeFileWriter(), new ImmediateDelay()).RunAsync(new ChunkedProvider("0123456789", 5), plan, ExistingFilePolicy.Skip, Guid.NewGuid(), [], progress, default);
+            Assert.Contains(reports, x => x.PercentComplete > 0 && x.PercentComplete < 100);
+            Assert.Equal(100, reports.Last().PercentComplete);
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    private sealed class InlineProgress<T>(Action<T> report) : IProgress<T>
+    {
+        public void Report(T value) => report(value);
+    }
+
+    private sealed class ChunkedProvider(string content, int chunkSize) : IPublicCloudProvider
+    {
+        public ProviderKind Kind => ProviderKind.GoogleDrive;
+        public Task<PublicManifest> BuildManifestAsync(ParsedCloudLink link, IProgress<ManifestProgress>? progress, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<DownloadLease> OpenDownloadAsync(ManifestItem item, CancellationToken cancellationToken)
+        {
+            var bytes = System.Text.Encoding.UTF8.GetBytes(content);
+            return Task.FromResult(new DownloadLease(new ChunkedStream(bytes, chunkSize), bytes.Length, "application/octet-stream"));
+        }
+    }
+
+    private sealed class ChunkedStream(byte[] bytes, int chunkSize) : MemoryStream(bytes)
+    {
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+            => base.ReadAsync(buffer[..Math.Min(buffer.Length, chunkSize)], cancellationToken);
+    }
+
     private sealed class BytesProvider(string content) : IPublicCloudProvider
     {
         public int OpenCount { get; private set; }

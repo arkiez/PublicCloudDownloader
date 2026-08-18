@@ -34,7 +34,10 @@ public partial class DownloadMonitorWindow : Window
         SetRunning(true);
         ActivityList.Items.Clear();
         _loggedActivities.Clear();
-        CountText.Text = string.Empty;
+        var totalFiles = _prepared.Plan.Items.Count(x => x.Source.Kind == ManifestItemKind.File);
+        ProgressBar.IsIndeterminate = false;
+        ProgressBar.Value = 0;
+        CountText.Text = $"0 of {totalFiles:N0} - 0%";
 
         var progress = new Progress<DownloadProgress>(UpdateProgress);
         try
@@ -54,9 +57,9 @@ public partial class DownloadMonitorWindow : Window
     private void UpdateProgress(DownloadProgress progress)
     {
         ProgressBar.IsIndeterminate = false;
-        ProgressBar.Value = progress.TotalFiles == 0 ? 100 : progress.CompletedFiles * 100d / progress.TotalFiles;
+        ProgressBar.Value = progress.PercentComplete;
         StatusText.Text = progress.Status;
-        CountText.Text = $"{progress.CompletedFiles:N0} of {progress.TotalFiles:N0}";
+        CountText.Text = $"{progress.CompletedFiles:N0} of {progress.TotalFiles:N0} - {progress.PercentComplete:0}%";
         if (progress.Status == "Downloaded")
             AppendActivity(progress.CurrentRelativePath, "Downloaded", "Downloaded");
         else if (progress.Status == "Skipped existing file")
