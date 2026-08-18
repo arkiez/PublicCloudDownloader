@@ -36,9 +36,9 @@ mode. Anonymous cookies, tokens, resource keys, and temporary URLs stay in
 memory and are not written to logs. Keep the entire application folder together
 when using it portably. The data and logs folders are stored beside the EXE.
 
-UNINSTALL
-Uninstall removes only the application and its local data/logs. Files downloaded
-to other folders are not deleted.
+PORTABLE REMOVAL
+Close the app, then delete its complete application folder. Files downloaded to
+other folders are not deleted.
 
 COMPATIBILITY
 Cloud providers can change public-share pages and endpoints. If the app reports

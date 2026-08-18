@@ -23,8 +23,8 @@
 
 ## File Map
 
-- Modify `src/PublicCloudDownloader.App/App.xaml`: monochrome tokens and shared Window, TextBox, Button, ListBox, and ProgressBar styles.
-- Modify `src/PublicCloudDownloader.App/MainWindow.xaml`: compact header, form, action row, support strip, and creator/version footer.
+- Modify `src/PublicCloudDownloader.App/App.xaml`: monochrome tokens and shared Window, TextBox, Button, ToggleButton, ListBox, and ProgressBar styles.
+- Modify `src/PublicCloudDownloader.App/MainWindow.xaml`: compact header, form, action row with supported-services disclosure, and creator/version footer.
 - Leave `MainWindow.xaml.cs`, `MainViewModel.cs`, provider code, and workflow code unchanged.
 
 ---
@@ -182,14 +182,12 @@ Use this root and row contract:
 Implement the three rows exactly as follows:
 
 - Header: white surface, one-pixel bottom border, `24` horizontal padding, 40 x 40 black rounded icon tile, inline white cloud/download vector, 20-point title, and 12-point subtitle `Download public Google Drive and OneDrive files - no sign-in required.`
-- Form surface: margin `24,10`, padding `20,12`, white background, one-pixel `BorderBrush`, and corner radius `12`. Use ten rows for link label/field/status, 10-pixel gap, destination label/field/status, 12-pixel gap, action row, and support strip.
+- Form surface: margin `24,10`, padding `20,12`, white background, one-pixel `BorderBrush`, and corner radius `12`. Use nine rows for link label/field/status, 10-pixel gap, destination label/field/status, 12-pixel gap, and action row.
 - Labels: `PUBLIC FILE OR FOLDER LINK` and `SAVE TO`, 12-point semibold secondary text.
 - Link row: preserve `SourceLinkBox`, source binding, tooltip, automation name, and `Paste_Click`; use a 44-pixel input plus a 94-pixel secondary button with a 16-pixel clipboard vector and `Paste` text.
 - Destination row: preserve destination binding, automation name, and `Browse_Click`; use the same sizing with a folder vector and `Browse` text.
 - Status rows: preserve `LinkStatus`, `DestinationStatus`, and polite live regions; use 12-point secondary text, 17-pixel minimum height, and character ellipsis.
-- Action row: left copy is `Public links only` plus `Access is checked before download.`; right action is a minimum 142-pixel black `PrimaryButton` with a white vector arrow, `Download` text, `CanDownload`, `Download_Click`, `IsDefault="True"`, and the existing automation name.
-- Support strip: margin `0,8,0,0`, padding `10,7`, neutral surface and border, radius `8`, a 16-pixel vector information symbol, wrapping 11.5-point copy `Supports public Google Drive and OneDrive Personal files/folders. Business and SharePoint links aren't supported.`
-- Do not add fixed pixel heights to the form rows; the support copy must wrap at minimum width.
+- Action row: left copy is `Public links only` plus `Access is checked before download.`; right side places a 44-pixel `SecondaryToggleButton` information icon before the minimum 142-pixel black `PrimaryButton`. The toggle has no Click handler; its wrapped tooltip, AutomationProperties Name `Supported services information`, and HelpText expose `Supports public Google Drive and OneDrive Personal files/folders. Business and SharePoint links aren't supported.`. Its `IsChecked` drives a non-focusable, auto-closing Popup with the same full copy. The black Download button retains its white vector arrow, `Download` text, `CanDownload`, `Download_Click`, `IsDefault="True"`, and existing automation name.
 
 - [ ] **Step 2: Add the exact creator/version footer**
 
@@ -263,11 +261,11 @@ Expected: exit code `0`.
 dotnet run --project src/PublicCloudDownloader.App/PublicCloudDownloader.App.csproj -c Release --no-build
 ```
 
-Confirm the window opens centered at 720 x 500; no blue remains; every header/form/action/support/footer element is visible; monochrome icons are crisp; disabled Download is readable; and the complete creator credit is visible and non-interactive. Repeat the inspection at 100% and 150% Windows display scaling when both scaling modes are available.
+Confirm the window opens centered at 720 x 500; no blue remains; every header/form/action/footer element is visible; monochrome icons are crisp; disabled Download is readable; the supported-services toggle displays its full wrapped tooltip on hover and toggles the full-copy popup through mouse/keyboard activation; and the complete creator credit is visible and non-interactive. Repeat the inspection at 100% and 150% Windows display scaling when both scaling modes are available.
 
 - [ ] **Step 4: Verify keyboard and resize behavior**
 
-Tab order must be link, Paste, destination, Browse, Download. Every focus state must be visible. Enter invokes Download only when enabled. At 650 x 470, controls must not overlap or clip; long status text trims and support copy wraps. Open Existing Files and Download Progress when test data permits and confirm shared monochrome controls remain usable.
+Tab order must be link, Paste, destination, Browse, supported-services information, Download. Every focus state must be visible. Hover must reveal the complete supported-services tooltip; keyboard focus and the accessibility tree must expose its name/help text and toggle state; Enter or Space must open/close the popup. Verify outside-click and Escape behavior as WPF permits. Enter invokes Download only when enabled. At 650 x 470, controls must not overlap or clip. Open Existing Files and Download Progress when test data permits and confirm shared monochrome controls remain usable.
 
 - [ ] **Step 5: Review the final diff and status**
 
@@ -277,4 +275,4 @@ git status --short
 git log -3 --oneline
 ```
 
-Expected: no whitespace errors, no unrelated modifications, and two implementation commits after the design-spec commit. If visual inspection required a correction, rerun all Task 3 checks and commit it as `fix: polish compact monochrome layout`; otherwise do not create an empty commit.
+Expected: no whitespace errors, no unrelated modifications, and the complete `539c126..HEAD` feature history reviewed. If visual inspection required a correction, rerun all Task 3 checks and commit it as `fix: polish compact monochrome layout`; otherwise do not create an empty commit.

@@ -1,13 +1,56 @@
-<Window x:Class="PublicCloudDownloader.App.ConflictDialog" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Existing Files" Width="600" Height="390" MinWidth="520" WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
-    <Grid Margin="28"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-        <StackPanel><TextBlock Text="Some files already exist" FontSize="21" FontWeight="SemiBold"/><TextBlock x:Name="Description" Margin="0,10,0,0" TextWrapping="Wrap" Foreground="{StaticResource SecondaryTextBrush}"/></StackPanel>
-        <ListBox x:Name="ConflictList" Grid.Row="1" Margin="0,16,0,0" BorderBrush="{StaticResource BorderBrush}" AutomationProperties.Name="Files that already exist"/>
-        <TextBlock Grid.Row="2" Margin="0,12,0,0" Text="Choose one action for every file shown above. Overwrite replaces only these confirmed files after each new copy finishes." TextWrapping="Wrap" Foreground="{StaticResource SecondaryTextBrush}"/>
+<Window x:Class="PublicCloudDownloader.App.ConflictDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Existing Files" Width="600" Height="390" MinWidth="520"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Icon="Assets/PublicCloudDownloader.ico">
+    <Grid Margin="28">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel>
+            <TextBlock Text="Some files already exist" FontSize="21" FontWeight="SemiBold" />
+            <TextBlock x:Name="Description" Margin="0,10,0,0" TextWrapping="Wrap"
+                       Foreground="{StaticResource SecondaryTextBrush}" />
+        </StackPanel>
+        <ListBox x:Name="ConflictList" Grid.Row="1" Margin="0,16,0,0"
+                 BorderBrush="{StaticResource BorderBrush}"
+                 AutomationProperties.Name="Files that already exist" />
+        <TextBlock Grid.Row="2" Margin="0,12,0,0"
+                   Text="Choose one action for every file shown above. Overwrite replaces only these confirmed files after each new copy finishes."
+                   TextWrapping="Wrap" Foreground="{StaticResource SecondaryTextBrush}" />
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
-            <Button x:Name="CancelButton" Content="Cancel" Style="{StaticResource SecondaryButton}" Click="Cancel_Click" IsCancel="True" IsDefault="True"/>
-            <Button Content="Skip existing" Style="{StaticResource PrimaryButton}" Margin="10,0,0,0" Click="Skip_Click"/>
-            <Button Content="Overwrite existing" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Click="Overwrite_Click"/>
+            <Button x:Name="CancelButton" Style="{StaticResource SecondaryButton}"
+                    AutomationProperties.Name="Cancel"
+                    Click="Cancel_Click" IsCancel="True" IsDefault="True">
+                <StackPanel Orientation="Horizontal">
+                    <ContentControl Content="{StaticResource OcticonXCircle16}" Margin="0,0,7,0"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                    Style="{StaticResource Octicon16}" />
+                    <TextBlock Text="Cancel" />
+                </StackPanel>
+            </Button>
+            <Button Style="{StaticResource PrimaryButton}" Margin="10,0,0,0"
+                    AutomationProperties.Name="Skip existing" Click="Skip_Click">
+                <StackPanel Orientation="Horizontal">
+                    <ContentControl Content="{StaticResource OcticonSkip16}" Margin="0,0,7,0"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                    Style="{StaticResource Octicon16}" />
+                    <TextBlock Text="Skip existing" />
+                </StackPanel>
+            </Button>
+            <Button Style="{StaticResource SecondaryButton}" Margin="10,0,0,0"
+                    AutomationProperties.Name="Overwrite existing" Click="Overwrite_Click">
+                <StackPanel Orientation="Horizontal">
+                    <ContentControl Content="{StaticResource OcticonFileDiff16}" Margin="0,0,7,0"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                    Style="{StaticResource Octicon16}" />
+                    <TextBlock Text="Overwrite existing" />
+                </StackPanel>
+            </Button>
         </StackPanel>
     </Grid>
 </Window>

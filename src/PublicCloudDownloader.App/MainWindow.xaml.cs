@@ -20,6 +20,18 @@ public partial class MainWindow : Window
         SourceLinkBox.Focus(); SourceLinkBox.CaretIndex = SourceLinkBox.Text.Length;
     }
 
+    private void ClearSourceLink_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel.SourceLink = string.Empty;
+        SourceLinkBox.Focus();
+    }
+
+    private void ClearDestinationPath_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel.DestinationPath = string.Empty;
+        DestinationPathBox.Focus();
+    }
+
     private void Browse_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFolderDialog { Title = "Choose where downloaded files will be saved", Multiselect = false, InitialDirectory = Directory.Exists(_viewModel.DestinationPath) ? _viewModel.DestinationPath : null };

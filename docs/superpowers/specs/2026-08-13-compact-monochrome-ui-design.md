@@ -18,7 +18,7 @@ native on Windows 10 and Windows 11, remain easy to scan, and keep the source
 link, destination, and Download action as the only primary workflow.
 
 The main window will open at approximately `720 x 500` device-independent
-pixels with a minimum size near `650 x 460`. It remains resizable. The native
+pixels with an exact minimum size of `650 x 470`. It remains resizable. The native
 Windows title bar is retained for familiar window controls, keyboard behavior,
 and accessibility.
 
@@ -71,12 +71,16 @@ large nested card and excess empty space in the current interface.
 7. A compact trust statement (`Public links only`) sits to the left of the
    black Download button. The button uses a download vector icon plus text and
    remains the only filled primary action.
-8. The supported-services explanation becomes a shallow neutral information
-   strip. It wraps when the window is narrowed and never clips.
+8. A 44-pixel secondary information ToggleButton appears immediately before
+   Download. Hovering it reveals a wrapped tooltip; activating it with mouse,
+   Enter, or Space toggles a non-interactive popup with the same full supported-
+   services copy. Keyboard and screen-reader users receive the full copy and
+   the toggle's disclosure state.
 
 Tab order follows the visual order: link, Paste, destination, Browse,
-Download. Enter continues to invoke Download when it is enabled. All existing
-AutomationProperties names remain present or are made more descriptive.
+supported-services information, Download. Enter continues to invoke Download
+when it is enabled. All existing AutomationProperties names remain present or
+are made more descriptive.
 
 ### Footer and creator credit
 
@@ -132,8 +136,10 @@ accessibility and must not alter workflow behavior.
 5. Navigate the complete form using only Tab, Shift+Tab, Enter, and Space.
 6. Confirm the creator credit exactly matches
    `Arkie'z K. Khositkhanawut` and is not interactive.
-7. Confirm long links, long paths, validation errors, and wrapped support text
-   remain readable without expanding the default window.
+7. Confirm long links, long paths, and validation errors remain readable
+   without expanding the default window; hover the supported-services toggle
+   and verify its full wrapped tooltip, keyboard focus, screen-reader text,
+   popup open/close behavior, and toggle state.
 8. Open the conflict and monitor windows and verify shared styles remain
    usable and no behavior has changed.
 
