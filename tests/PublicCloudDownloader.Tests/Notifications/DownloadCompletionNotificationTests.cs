@@ -23,4 +23,26 @@ public sealed class DownloadCompletionNotificationTests
         Assert.Contains("3 files downloaded", message);
         Assert.Contains("C:\\Downloads", message);
     }
+
+    [Fact]
+    public void Completion_session_notifies_immediately_and_only_once()
+    {
+        var notifier = new RecordingNotifier();
+        var session = new DownloadCompletionNotificationSession(notifier, "C:\\Downloads");
+
+        session.NotifyCleanCompletion("3 files downloaded, 0 skipped.");
+        session.NotifyCleanCompletion("3 files downloaded, 0 skipped.");
+
+        var call = Assert.Single(notifier.Calls);
+        Assert.Equal("3 files downloaded, 0 skipped.", call.Summary);
+        Assert.Equal("C:\\Downloads", call.Destination);
+    }
+
+    private sealed class RecordingNotifier : IDesktopNotifier
+    {
+        public List<(string Summary, string Destination)> Calls { get; } = [];
+
+        public void ShowDownloadComplete(string summary, string destinationPath)
+            => Calls.Add((summary, destinationPath));
+    }
 }

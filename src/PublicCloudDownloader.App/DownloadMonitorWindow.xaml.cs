@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows;
+using PublicCloudDownloader.App.Notifications;
 using PublicCloudDownloader.App.ViewModels;
 using PublicCloudDownloader.Core.Downloads;
 using PublicCloudDownloader.Core.Models;
@@ -15,18 +16,20 @@ public partial class DownloadMonitorWindow : Window
     private readonly MainViewModel _viewModel;
     private readonly PreparedDownload _prepared;
     private readonly HashSet<string> _loggedActivities = new(StringComparer.OrdinalIgnoreCase);
+    private readonly DownloadCompletionNotificationSession _notificationSession;
     private ExistingFilePolicy _policy;
     private CancellationTokenSource? _cancellation;
 
     public string FinalMessage { get; private set; } = "Download cancelled.";
     public string CompletionSummary { get; private set; } = string.Empty;
 
-    public DownloadMonitorWindow(MainViewModel viewModel, PreparedDownload prepared, ExistingFilePolicy policy)
+    public DownloadMonitorWindow(MainViewModel viewModel, PreparedDownload prepared, ExistingFilePolicy policy, DownloadCompletionNotificationSession notificationSession)
     {
         InitializeComponent();
         _viewModel = viewModel;
         _prepared = prepared;
         _policy = policy;
+        _notificationSession = notificationSession;
         Loaded += async (_, _) => await RunAsync();
     }
 
@@ -126,6 +129,7 @@ public partial class DownloadMonitorWindow : Window
             CompletionSummary = StatusText.Text;
             ProgressBar.Value = 100;
             FinalMessage = "Download complete.";
+            _notificationSession.NotifyCleanCompletion(CompletionSummary);
         }
     }
 

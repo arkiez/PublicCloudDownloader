@@ -11,7 +11,7 @@ public sealed class UpdatePackageServiceTests
     public async Task Valid_package_is_verified_staged_and_reports_completion()
     {
         var zip = BuildZip();
-        var release = Release(zip, new Version(1, 2, 0));
+        var release = Release(zip, CurrentVersion);
         var progress = new CaptureProgress();
         var service = new UpdatePackageService(new HttpClient(new BytesHandler(zip)));
 
@@ -21,7 +21,7 @@ public sealed class UpdatePackageServiceTests
         try
         {
             Assert.True(File.Exists(staged.ExecutablePath));
-            Assert.Equal(new Version(1, 2, 0), staged.TargetVersion);
+            Assert.Equal(CurrentVersion, staged.TargetVersion);
             Assert.Contains(progress.Values, value => value >= 100);
         }
         finally { Directory.Delete(staged.RootPath, true); }
@@ -31,9 +31,9 @@ public sealed class UpdatePackageServiceTests
     public async Task Wrong_digest_prevents_staging()
     {
         var zip = BuildZip();
-        var release = Release(zip, new Version(1, 2, 0)) with
+        var release = Release(zip, CurrentVersion) with
         {
-            Package = Release(zip, new Version(1, 2, 0)).Package with
+            Package = Release(zip, CurrentVersion).Package with
             {
                 Digest = "sha256:" + new string('0', 64)
             }
@@ -52,7 +52,7 @@ public sealed class UpdatePackageServiceTests
         var zip = BuildZip(entryName);
         var service = new UpdatePackageService(new HttpClient(new BytesHandler(zip)));
         await Assert.ThrowsAsync<UpdatePackageException>(() =>
-            service.DownloadAndStageAsync(Release(zip, new Version(1, 2, 0)), null, CancellationToken.None));
+            service.DownloadAndStageAsync(Release(zip, CurrentVersion), null, CancellationToken.None));
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public sealed class UpdatePackageServiceTests
         var zip = BuildZip("extra.dll");
         var service = new UpdatePackageService(new HttpClient(new BytesHandler(zip)));
         await Assert.ThrowsAsync<UpdatePackageException>(() =>
-            service.DownloadAndStageAsync(Release(zip, new Version(1, 2, 0)), null, CancellationToken.None));
+            service.DownloadAndStageAsync(Release(zip, CurrentVersion), null, CancellationToken.None));
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public sealed class UpdatePackageServiceTests
         var zip = BuildZip(includeExecutable: false);
         var service = new UpdatePackageService(new HttpClient(new BytesHandler(zip)));
         await Assert.ThrowsAsync<UpdatePackageException>(() =>
-            service.DownloadAndStageAsync(Release(zip, new Version(1, 2, 0)), null, CancellationToken.None));
+            service.DownloadAndStageAsync(Release(zip, CurrentVersion), null, CancellationToken.None));
     }
 
     [Fact]
@@ -79,8 +79,16 @@ public sealed class UpdatePackageServiceTests
         var zip = BuildZip();
         var service = new UpdatePackageService(new HttpClient(new BytesHandler(zip)));
         await Assert.ThrowsAsync<UpdatePackageException>(() =>
-            service.DownloadAndStageAsync(Release(zip, new Version(1, 2, 1)), null, CancellationToken.None));
+            service.DownloadAndStageAsync(Release(zip, MismatchedVersion), null, CancellationToken.None));
     }
+
+    private static Version CurrentVersion =>
+        new(typeof(PublicCloudDownloader.App.App).Assembly.GetName().Version!.Major,
+            typeof(PublicCloudDownloader.App.App).Assembly.GetName().Version!.Minor,
+            typeof(PublicCloudDownloader.App.App).Assembly.GetName().Version!.Build);
+
+    private static Version MismatchedVersion =>
+        new(CurrentVersion.Major, CurrentVersion.Minor, CurrentVersion.Build + 1);
 
     private static UpdateRelease Release(byte[] zip, Version version)
     {
