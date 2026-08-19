@@ -44,7 +44,8 @@ foreach ($asset in $assets) {
 if (git tag --list $tag) { throw "Local tag already exists: $tag" }
 $remoteTag = git ls-remote --tags origin "refs/tags/$tag"
 if ($remoteTag) { throw "Remote tag already exists: $tag" }
-$existingRelease = @(gh release list --repo arkiez/PublicCloudDownloader --json tagName --limit 100 | ConvertFrom-Json | Where-Object { $_.tagName -eq $tag })`r`nif ($existingRelease.Count -gt 0) { throw "GitHub Release already exists: $tag" }
+$existingRelease = @(gh release list --repo arkiez/PublicCloudDownloader --json tagName --limit 100 | ConvertFrom-Json | Where-Object { $_.tagName -eq $tag })
+if ($existingRelease.Count -gt 0) { throw "GitHub Release already exists: $tag" }
 
 git tag -a $tag -m "Public Cloud Downloader $tag"
 if ($LASTEXITCODE -ne 0) { throw 'Tag creation failed.' }

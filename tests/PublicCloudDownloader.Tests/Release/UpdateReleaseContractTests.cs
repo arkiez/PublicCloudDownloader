@@ -25,6 +25,28 @@ public sealed class UpdateReleaseContractTests
         Assert.Contains("gh release list", script, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("gh release view", script, StringComparison.OrdinalIgnoreCase);
     }
+    [Fact]
+    public void Release_publisher_has_valid_powershell_syntax()
+    {
+        var root = FindRepoRoot();
+        var scriptPath = Path.Combine(root, "scripts", "publish-github-release.ps1");
+        var escapedPath = scriptPath.Replace("'", "''", StringComparison.Ordinal);
+        var startInfo = new System.Diagnostics.ProcessStartInfo("powershell.exe")
+        {
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+        startInfo.ArgumentList.Add("-NoProfile");
+        startInfo.ArgumentList.Add("-Command");
+        startInfo.ArgumentList.Add($"$tokens=$null; $errors=$null; [System.Management.Automation.Language.Parser]::ParseFile('{escapedPath}', [ref]$tokens, [ref]$errors) | Out-Null; if ($errors.Count -gt 0) {{ $errors | ForEach-Object {{ Write-Error $_.Message }}; exit 1 }}");
+        using var process = System.Diagnostics.Process.Start(startInfo)!;
+        var stdout = process.StandardOutput.ReadToEnd();
+        var stderr = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+        Assert.True(process.ExitCode == 0, stdout + stderr);
+    }
     private static string FindRepoRoot()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
