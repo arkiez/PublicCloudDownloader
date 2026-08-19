@@ -20,6 +20,8 @@
 - A valid `sha256:<hex>` release-asset digest is mandatory before extraction.
 - Existing `data/` and `logs/` beside the executable are never replaced or deleted.
 - Update failure must not prevent normal public-cloud downloads.
+- The footer `Update v<version>` button is visible only for an available newer release and is otherwise `Collapsed`.
+- Successful downloads show both the existing in-app completion status and a non-blocking Windows notification.
 - No silent update; the user must choose `Update now`.
 - No installer/MSI/MSIX or background service in v1.2.0.
 
@@ -217,9 +219,12 @@ Expected: PASS.
 **Files:**
 - Create: `src/PublicCloudDownloader.App/UpdatePromptWindow.xaml`
 - Create: `src/PublicCloudDownloader.App/UpdatePromptWindow.xaml.cs`
+- Create: `src/PublicCloudDownloader.App/Notifications/IDesktopNotifier.cs`
+- Create: `src/PublicCloudDownloader.App/Notifications/WindowsDesktopNotifier.cs`
 - Modify: `src/PublicCloudDownloader.App/MainWindow.xaml`
 - Modify: `src/PublicCloudDownloader.App/MainWindow.xaml.cs`
 - Create: `tests/PublicCloudDownloader.Tests/Updates/UpdateUiCoordinatorTests.cs`
+- Create: `tests/PublicCloudDownloader.Tests/Notifications/DownloadCompletionNotificationTests.cs`
 - Create: `src/PublicCloudDownloader.App/Updates/UpdateUiCoordinator.cs`
 
 **Interfaces:**
@@ -237,16 +242,19 @@ Expected: FAIL.
 The prompt shows `Update available`, current/latest versions, a trimmed release-notes body, `Update now`, and `Later`. `Update now` downloads/stages with progress text/bar, launches the staged EXE with `--apply-update`, then closes the current app. `Later` closes only the prompt.
 
 - [ ] **Step 4: Add manual footer action without enlarging the fixed window**
-Replace the footer's right-side single version TextBlock with a horizontal StackPanel containing a text-style `Check for updates` Button followed by `VersionText`. Keep `Width=900`, `Height=470`, `ResizeMode=CanMinimize`; no scrollbar is introduced.
+Replace the footer's right-side single version TextBlock with a horizontal StackPanel containing a text-style `Check for updates` Button, a compact `Update v<version>` button, and `VersionText`. Bind the update button visibility to the available-release state using `Collapsed` when unavailable so it consumes no space. Keep `Width=900`, `Height=470`, `ResizeMode=CanMinimize`; no scrollbar is introduced.
 
 - [ ] **Step 5: Implement startup notification policy**
 Attach `Loaded += async ...` once. Automatic check is silent for `NoUpdate` and `Failed`; it opens the prompt only for `Available`. Manual check explicitly shows `You're up to date` or `Could not check for updates` when appropriate.
 
-- [ ] **Step 6: Run targeted and full tests**
+- [ ] **Step 6: Add download-complete Windows notification**
+Add `IDesktopNotifier.ShowDownloadComplete(string summary, string destinationPath)` and a portable Win32/WinForms-backed implementation that shows a non-blocking notification without turning the app into a persistent tray application. Trigger it only when `DownloadMonitorWindow` reports a completed download; keep the existing in-app `LinkStatus` completion text. Add tests around the completion-notification decision/summary so cancelled or failed downloads do not notify.
+
+- [ ] **Step 7: Run targeted and full tests**
 Run: `dotnet test tests/PublicCloudDownloader.Tests/PublicCloudDownloader.Tests.csproj -c Release`
 Expected: all tests PASS and existing downloader tests unchanged.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 `git add src/PublicCloudDownloader.App tests/PublicCloudDownloader.Tests/Updates/UpdateUiCoordinatorTests.cs && git commit -m "feat: add update checks and notification UI"`
 
 ### Task 6: Release publishing and public-repository safety gate

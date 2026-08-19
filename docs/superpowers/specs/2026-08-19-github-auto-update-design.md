@@ -30,9 +30,9 @@ When a newer stable release is available, the app shows a compact update prompt 
 - `Update now`
 - `Later`
 
-The main window also provides a manual `Check for updates` action so the user can request the same check on demand.
+The main window also provides a manual `Check for updates` action so the user can request the same check on demand. When a newer version is known, a footer `Update v<version>` button is visible; when no update is available or the check fails, that button is `Collapsed` and consumes no layout space.
 
-While an update is downloading, show the package download progress. If verification or installation fails, show a safe error and leave the currently installed application unchanged.
+While an update is downloading, show the package download progress. If verification or installation fails, show a safe error and leave the currently installed application unchanged. After a normal cloud download completes, keep the existing in-app completion status and also raise a non-blocking Windows notification containing the completion summary and destination path.
 
 ## Package Contract
 
