@@ -3,6 +3,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>PublicCloudDownloader</AssemblyName>
     <RootNamespace>PublicCloudDownloader.App</RootNamespace>
     <Product>Public Cloud Downloader</Product>

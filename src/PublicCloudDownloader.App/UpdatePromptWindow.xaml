@@ -1,0 +1,47 @@
+<Window x:Class="PublicCloudDownloader.App.UpdatePromptWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Update available" Width="470" Height="360"
+        ResizeMode="NoResize" WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False" Icon="Assets/PublicCloudDownloader.ico">
+    <Grid Margin="22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Update available" FontSize="20" FontWeight="SemiBold" />
+        <StackPanel Grid.Row="1" Margin="0,12,0,0" Orientation="Horizontal">
+            <TextBlock Text="Current: " Foreground="{StaticResource SecondaryTextBrush}" />
+            <TextBlock x:Name="CurrentVersionText" FontWeight="SemiBold" />
+            <TextBlock Text="   Latest: " Foreground="{StaticResource SecondaryTextBrush}" />
+            <TextBlock x:Name="LatestVersionText" FontWeight="SemiBold" />
+        </StackPanel>
+
+        <Border Grid.Row="2" Margin="0,14,0,0" Padding="12" CornerRadius="8"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <TextBlock x:Name="NotesText" TextWrapping="Wrap"
+                           Foreground="{StaticResource SecondaryTextBrush}" />
+            </ScrollViewer>
+        </Border>
+
+        <StackPanel x:Name="ProgressPanel" Grid.Row="3" Margin="0,14,0,0" Visibility="Collapsed">
+            <TextBlock x:Name="ProgressText" Text="Preparing update…" FontSize="12"
+                       Foreground="{StaticResource SecondaryTextBrush}" />
+            <ProgressBar x:Name="UpdateProgressBar" Height="7" Margin="0,7,0,0"
+                         Minimum="0" Maximum="100" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="4" Margin="0,16,0,0" Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button x:Name="LaterButton" MinWidth="88" MinHeight="36" Margin="0,0,10,0"
+                    Style="{StaticResource SecondaryButton}" Click="Later_Click">Later</Button>
+            <Button x:Name="UpdateButton" MinWidth="112" MinHeight="36"
+                    Style="{StaticResource PrimaryButton}" Click="Update_Click">Update now</Button>
+        </StackPanel>
+    </Grid>
+</Window>

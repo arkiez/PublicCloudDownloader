@@ -2,6 +2,7 @@ using System.Windows;
 using System.IO;
 using PublicCloudDownloader.App.ViewModels;
 using PublicCloudDownloader.App.Updates;
+using PublicCloudDownloader.App.Notifications;
 using PublicCloudDownloader.Core.Downloads;
 using PublicCloudDownloader.Core.Workflow;
 using PublicCloudDownloader.Infrastructure.Files;
@@ -10,7 +11,7 @@ using PublicCloudDownloader.Infrastructure.Runtime;
 
 namespace PublicCloudDownloader.App;
 
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -32,7 +33,10 @@ public partial class App : Application
             Shutdown(Environment.ExitCode); return;
         }
         IDownloadWorkflow workflow = new DownloadWorkflow(new ProviderFactory(), new SafeFileWriter(), new SystemDelay(), new JobLog());
-        new MainWindow(new MainViewModel(workflow)).Show();
+        var updateHttpClient = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+        var updateCoordinator = new UpdateUiCoordinator(new GitHubUpdateClient(updateHttpClient));
+        var updatePackageService = new UpdatePackageService(updateHttpClient);
+        new MainWindow(new MainViewModel(workflow), updateCoordinator, updatePackageService, new WindowsDesktopNotifier()).Show();
     }
 
     private static int RunApplyUpdate(string[] args)
