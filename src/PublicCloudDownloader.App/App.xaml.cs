@@ -1,6 +1,7 @@
 using System.Windows;
 using System.IO;
 using PublicCloudDownloader.App.ViewModels;
+using PublicCloudDownloader.App.Updates;
 using PublicCloudDownloader.Core.Downloads;
 using PublicCloudDownloader.Core.Workflow;
 using PublicCloudDownloader.Infrastructure.Files;
@@ -14,6 +15,11 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if (e.Args.Length > 0 && e.Args[0].Equals("--apply-update", StringComparison.OrdinalIgnoreCase))
+        {
+            Environment.ExitCode = RunApplyUpdate(e.Args);
+            Shutdown(Environment.ExitCode); return;
+        }
         if (e.Args.Contains("--self-test", StringComparer.OrdinalIgnoreCase))
         {
             Environment.ExitCode = AppSelfTest.Run(AppContext.BaseDirectory);
@@ -29,6 +35,13 @@ public partial class App : Application
         new MainWindow(new MainViewModel(workflow)).Show();
     }
 
+    private static int RunApplyUpdate(string[] args)
+    {
+        if (args.Length != 5 || !int.TryParse(args[3], out var oldProcessId) || oldProcessId <= 0) return 2;
+        return new SelfUpdateRunner(new SystemProcessController())
+            .ApplyAsync(args[1], args[2], oldProcessId, args[4], CancellationToken.None)
+            .GetAwaiter().GetResult();
+    }
     private static int RunHeadlessDownload(string source, string destination)
     {
         try
