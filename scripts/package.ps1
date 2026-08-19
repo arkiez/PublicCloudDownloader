@@ -149,6 +149,7 @@ try {
         "SHA-256: $checksumLine"
     ) | Set-Content -LiteralPath (Join-Path $artifacts 'verification.txt') -Encoding ascii
 
+    Assert-ArtifactSet $artifacts @($zipName, 'SHA256SUMS.txt', 'verification.txt')
     Write-Output "Created ZIP release artifacts for $version in $artifacts"
 } finally {
     if ($stagingDir) {

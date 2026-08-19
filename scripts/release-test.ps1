@@ -38,6 +38,12 @@ function Test-Payload([string]$root, [bool]$allowRuntimeData) {
             throw "Release payload is missing file: $file"
         }
     }
+    [xml]$versionXml = Get-Content (Join-Path $repoRoot 'Version.props')
+    $expectedFileVersion = ([string]$versionXml.Project.PropertyGroup.Version) + '.0'
+    $actualFileVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $resolved 'PublicCloudDownloader.exe')).FileVersion
+    if ($actualFileVersion -ne $expectedFileVersion) {
+        throw "Release executable version mismatch. Expected $expectedFileVersion but found $actualFileVersion."
+    }
     foreach ($directory in @('data', 'logs')) {
         $path = Join-Path $resolved $directory
         if (-not (Test-Path -LiteralPath $path -PathType Container)) {
