@@ -16,3 +16,22 @@ public static class DownloadCompletionNotificationPolicy
         return message.Length <= 240 ? message : message[..237] + "...";
     }
 }
+public sealed class DownloadCompletionNotificationSession
+{
+    private readonly IDesktopNotifier _notifier;
+    private readonly string _destinationPath;
+    private int _notified;
+
+    public DownloadCompletionNotificationSession(IDesktopNotifier notifier, string destinationPath)
+    {
+        _notifier = notifier;
+        _destinationPath = destinationPath;
+    }
+
+    public bool NotifyCleanCompletion(string summary)
+    {
+        if (Interlocked.Exchange(ref _notified, 1) != 0) return false;
+        _notifier.ShowDownloadComplete(summary, _destinationPath);
+        return true;
+    }
+}

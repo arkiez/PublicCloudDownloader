@@ -93,13 +93,10 @@ public partial class MainWindow : Window
                 policy = conflict.Policy;
             }
 
-            var monitor = new DownloadMonitorWindow(_viewModel, prepared, policy) { Owner = this };
+            var notificationSession = new DownloadCompletionNotificationSession(_desktopNotifier, _viewModel.DestinationPath);
+            var monitor = new DownloadMonitorWindow(_viewModel, prepared, policy, notificationSession) { Owner = this };
             monitor.ShowDialog();
             _viewModel.LinkStatus = monitor.FinalMessage;
-            if (DownloadCompletionNotificationPolicy.ShouldNotify(monitor.FinalMessage))
-            {
-                _desktopNotifier.ShowDownloadComplete(monitor.CompletionSummary, _viewModel.DestinationPath);
-            }
         }
         catch (PrivateLinkException)
         {
