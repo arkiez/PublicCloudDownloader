@@ -103,6 +103,10 @@ dotnet test PublicCloudDownloader.sln -c Release
 
 The canonical product version is defined in `Version.props`. Release requirements and verification evidence are documented under `docs/requirements/`.
 
+## License
+
+Public Cloud Downloader is released under the [MIT License](LICENSE).
+
 ---
 
 Created by **Arkie'z K. Khositkhanawut**
