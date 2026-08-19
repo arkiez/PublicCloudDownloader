@@ -16,6 +16,15 @@ public sealed class UpdateReleaseContractTests
         Assert.Contains("data and logs", readme, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void Release_publisher_checks_existing_releases_without_failing_on_missing_tag()
+    {
+        var root = FindRepoRoot();
+        var script = File.ReadAllText(Path.Combine(root, "scripts", "publish-github-release.ps1"));
+
+        Assert.Contains("gh release list", script, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("gh release view", script, StringComparison.OrdinalIgnoreCase);
+    }
     private static string FindRepoRoot()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
