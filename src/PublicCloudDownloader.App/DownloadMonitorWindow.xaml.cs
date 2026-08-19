@@ -19,6 +19,7 @@ public partial class DownloadMonitorWindow : Window
     private CancellationTokenSource? _cancellation;
 
     public string FinalMessage { get; private set; } = "Download cancelled.";
+    public string CompletionSummary { get; private set; } = string.Empty;
 
     public DownloadMonitorWindow(MainViewModel viewModel, PreparedDownload prepared, ExistingFilePolicy policy)
     {
@@ -122,6 +123,7 @@ public partial class DownloadMonitorWindow : Window
         {
             Heading.Text = "Download complete";
             StatusText.Text = $"{result.Downloaded:N0} file{(result.Downloaded == 1 ? "" : "s")} downloaded, {result.Skipped:N0} skipped.";
+            CompletionSummary = StatusText.Text;
             ProgressBar.Value = 100;
             FinalMessage = "Download complete.";
         }
